@@ -3,6 +3,7 @@ module github.com/condensat/bank-wallet
 go 1.14
 
 require (
+	github.com/btcsuite/btcd v0.20.1-beta
 	github.com/condensat/bank-core v0.0.2-0.20200423060000-f292ae2566db
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/jinzhu/gorm v1.9.16 // indirect
