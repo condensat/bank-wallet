@@ -5,7 +5,6 @@ github.com/PuerkitoBio/goquery v1.5.1/go.mod h1:GsLWisAFVj4WgDibEWF4pvYnkVQBpKBK
 github.com/aead/siphash v1.0.1/go.mod h1:Nywa3cDsYNNK3gaciGTWPwHt0wlpNV15vwmswBAUSII=
 github.com/andybalholm/cascadia v1.1.0/go.mod h1:GsXiBklL0woXo1j/WYWtSYYC4ouU9PqHO0sqidkEA4Y=
 github.com/bsm/redislock v0.5.0/go.mod h1:qagqKlV+xiLy26iV34Y3zRPxRcJjQYbV7pZfWFeSZ8M=
-github.com/btcsuite/btcd v0.20.1-beta/go.mod h1:wVuoA8VJLEcwgqHBwHmzLRazpKxTv13Px/pDuV7OomQ=
 github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f/go.mod h1:TdznJufoqS23FtqVCzL0ZqgP5MqXbb4fg/WgDys70nA=
 github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d/go.mod h1:+5NJ2+qvTyV9exUAL/rxXi3DcLg2Ts+ymUAY5y4NvMg=
 github.com/btcsuite/go-socks v0.0.0-20170105172521-4720035b7bfd/go.mod h1:HHNXQzUsZCxOoE+CPiyCTO6x34Zs86zZUiwtpXoGdtg=
@@ -17,6 +16,8 @@ github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/condensat/bank-core v0.0.3-0.20200423160000-25036aa4c3d8 h1:yPFYnpGSUyYoDC+r36AY+xJmEbHOVf689HLz/gIxCKY=
 github.com/condensat/bank-core v0.0.3-0.20200423160000-25036aa4c3d8/go.mod h1:Y12/3PUknb6cvecDt9cPg5DN36IXlM3ytqOx7RRvNzQ=
+github.com/condensat/btcd v0.20.1-beta.0.20200424100000-5dc523e373e2 h1:sTbrHWzjK6NXbwqqUgYwi1Efp0v/BkYBqjrU+Y8hvIk=
+github.com/condensat/btcd v0.20.1-beta.0.20200424100000-5dc523e373e2/go.mod h1:wVuoA8VJLEcwgqHBwHmzLRazpKxTv13Px/pDuV7OomQ=
 github.com/condensat/secureid v0.1.0 h1:x08lPpKf+qNZXvCIWkMF90l94tH5KgehXIV2vuWqi98=
 github.com/condensat/secureid v0.1.0/go.mod h1:uK99gtR8BlxJH7dw+f6Rd7mJ2OgvAUlTUA49ASfxLcM=
 github.com/davecgh/go-spew v0.0.0-20171005155431-ecdeabc65495/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
