@@ -14,8 +14,8 @@ github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792/go.mod h1:ghJtE
 github.com/btcsuite/winsvc v1.0.0/go.mod h1:jsenWakMcC0zFBFurPLEAyrnc/teJEM1O46fmI40EZs=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
-github.com/condensat/bank-core v0.0.3-0.20200423160000-25036aa4c3d8 h1:yPFYnpGSUyYoDC+r36AY+xJmEbHOVf689HLz/gIxCKY=
-github.com/condensat/bank-core v0.0.3-0.20200423160000-25036aa4c3d8/go.mod h1:Y12/3PUknb6cvecDt9cPg5DN36IXlM3ytqOx7RRvNzQ=
+github.com/condensat/bank-core v0.0.2-0.20200428160000-e1471099d6b2 h1:Z+80SpnUAhcsbSXz/LA+//LYi+ZcdcZoki/FGCXlV9I=
+github.com/condensat/bank-core v0.0.2-0.20200428160000-e1471099d6b2/go.mod h1:3kwNN1Er4c9IXCZWjsAGHR9epBSHBNirVue/r3sqKxg=
 github.com/condensat/btcd v0.20.1-beta.0.20200424100000-5dc523e373e2 h1:sTbrHWzjK6NXbwqqUgYwi1Efp0v/BkYBqjrU+Y8hvIk=
 github.com/condensat/btcd v0.20.1-beta.0.20200424100000-5dc523e373e2/go.mod h1:wVuoA8VJLEcwgqHBwHmzLRazpKxTv13Px/pDuV7OomQ=
 github.com/condensat/secureid v0.1.0 h1:x08lPpKf+qNZXvCIWkMF90l94tH5KgehXIV2vuWqi98=
