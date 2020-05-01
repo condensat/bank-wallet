@@ -5,7 +5,7 @@ go 1.14
 require (
 	github.com/btcsuite/btcd v0.20.1-beta
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
-	github.com/condensat/bank-core v0.0.2-0.20200428160000-e878e308b71c
+	github.com/condensat/bank-core v0.0.2-0.20200501080000-a5da0a8f7551
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/jinzhu/gorm v1.9.16
 	github.com/nats-io/nats.go v1.10.0 // indirect
