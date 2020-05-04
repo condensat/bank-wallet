@@ -14,8 +14,8 @@ github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792/go.mod h1:ghJtE
 github.com/btcsuite/winsvc v1.0.0/go.mod h1:jsenWakMcC0zFBFurPLEAyrnc/teJEM1O46fmI40EZs=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
-github.com/condensat/bank-core v0.0.2-0.20200504163139-b642db363be8 h1:MHbA3IFzsI3xeFIV7W5krEGzakqHlt20oaG/k29JZGM=
-github.com/condensat/bank-core v0.0.2-0.20200504163139-b642db363be8/go.mod h1:3kwNN1Er4c9IXCZWjsAGHR9epBSHBNirVue/r3sqKxg=
+github.com/condensat/bank-core v0.0.2-0.20200504100000-a9feaf562fb0 h1:XL1y2Ik5LGpDJQ+5WM1h92JBkcEmNxstr3FRCu9455A=
+github.com/condensat/bank-core v0.0.2-0.20200504100000-a9feaf562fb0/go.mod h1:hrPWEUcD2hZFt3RFHvPJbwSClEyd1YH969lyJ+UpRe4=
 github.com/condensat/btcd v0.20.1-beta.0.20200424100000-5dc523e373e2 h1:sTbrHWzjK6NXbwqqUgYwi1Efp0v/BkYBqjrU+Y8hvIk=
 github.com/condensat/btcd v0.20.1-beta.0.20200424100000-5dc523e373e2/go.mod h1:wVuoA8VJLEcwgqHBwHmzLRazpKxTv13Px/pDuV7OomQ=
 github.com/condensat/secureid v0.1.0 h1:x08lPpKf+qNZXvCIWkMF90l94tH5KgehXIV2vuWqi98=
@@ -113,6 +113,7 @@ github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXf
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/thoas/stats v0.0.0-20190407194641-965cb2de1678/go.mod h1:GkZsNBOco11YY68OnXUARbSl26IOXXAeYf6ZKmSZR2M=
 github.com/urfave/negroni v1.0.0/go.mod h1:Meg73S6kFm/4PpbYdq35yYWoCZ9mS/YSx+lKnmiohz4=
+github.com/ybbus/jsonrpc v2.1.2+incompatible/go.mod h1:XJrh1eMSzdIYFbM08flv0wp5G35eRniyeGut1z+LSiE=
 golang.org/x/crypto v0.0.0-20170930174604-9419663f5a44/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
