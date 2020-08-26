@@ -8,11 +8,11 @@ import (
 	"context"
 )
 
-func GetAddressInfo(ctx context.Context, rpcClient RpcClient, address Address) (AddressInfo, error) {
-	var result AddressInfo
-	err := callCommand(rpcClient, CmdGetAddressInfo, &result, address)
+func GetRawTransaction(ctx context.Context, rpcClient RpcClient, txID TransactionID) (Transaction, error) {
+	var result Transaction
+	err := callCommand(rpcClient, CmdGetRawTransaction, &result, txID)
 	if err != nil {
-		return AddressInfo{}, err
+		return "", err
 	}
 
 	return result, nil
