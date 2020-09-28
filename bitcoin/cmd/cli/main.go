@@ -56,6 +56,11 @@ func main() {
 	case "RawTransactionBitcoin":
 		err = RawTransactionBitcoin(ctx)
 
+	// Liquid Elements
+
+	case "RawTransactionElements":
+		err = RawTransactionElements(ctx)
+
 	default:
 		log.Fatalf("Unknown command %s.", command)
 	}
@@ -144,6 +149,74 @@ func RawTransactionBitcoin(ctx context.Context) error {
 	return nil
 }
 
+// Liquid Elements
+
+func RawTransactionElements(ctx context.Context) error {
+	rpcClient := elementsRpcClient()
+
+	destAddress := "el1qqw8rsv0nxl3mvgztna2n6fyz37wnucyt9yv5qcwty0af6e3yfaj5ke0hnadd96tp03nz8tltz4yxq39yqal9jjq9ry25gjhpw"
+	changeAddress := "el1qqdhtdknl5wazd2jysqwhun7tyx8zycygvtdyz0hg9tnr96m00ateqrewrzncus3hwdfvj9t9ehf45k5y700pjsdfc44khklma"
+	// We create 2 LBTC outputs, which might be a bit unnecessary
+	hex, err := commands.CreateRawTransaction(ctx, rpcClient, nil, []commands.SpendInfo{
+		{Address: destAddress, Amount: 0.001},
+	}, nil)
+	if err != nil {
+		return err
+	}
+	log.Printf("CreateRawTransaction: %s\n", hex)
+
+	rawTx, err := commands.DecodeRawTransaction(ctx, rpcClient, hex)
+	if err != nil {
+		return err
+	}
+	decoded, err := commands.ConvertToRawTransactionLiquid(rawTx)
+	if err != nil {
+		return err
+	}
+	log.Printf("DecodeRawTransaction: %+v\n", decoded)
+
+	funded, err := commands.FundRawTransactionWithOptions(ctx,
+		rpcClient,
+		hex,
+		commands.FundRawTransactionOptions{
+			ChangeAddress:   changeAddress,
+			IncludeWatching: true,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	log.Printf("FundRawTransaction: %+v\n", funded)
+
+	blinded, err := commands.BlindRawTransaction(ctx, rpcClient, commands.Transaction(funded.Hex))
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Blinded transaction OK\n")
+
+	signed, err := commands.SignRawTransactionWithWallet(ctx, rpcClient, commands.Transaction(blinded))
+	if err != nil {
+		return err
+	}
+	if !signed.Complete {
+		return errors.New("SignRawTransactionWithWallet failed")
+	}
+
+	accepted, err := commands.TestMempoolAccept(ctx, rpcClient, signed.Hex)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Accepted in the mempool: %+v\n", accepted.Allowed)
+	if !accepted.Allowed {
+		log.Printf("Reject-reason: %+v", accepted.Reason)
+		return errors.New("TestMempoolAccept failed")
+	}
+
+	return nil
+}
+
 // Helpers
 
 func bitcoinRpcClient() commands.RpcClient {
@@ -160,6 +233,27 @@ func bitcoinRpcClient() commands.RpcClient {
 		user = "bank-wallet"
 	}
 	password := os.Getenv("BITCOIN_TESTNET_PASSWORD")
+	if len(password) == 0 {
+		password = "password1"
+	}
+
+	return createRpcClient(hostname, port, user, password)
+}
+
+func elementsRpcClient() commands.RpcClient {
+	hostname := os.Getenv("ELEMENTS_REGTEST_HOSTNAME")
+	if len(hostname) == 0 {
+		hostname = "elements_regtest"
+	}
+	port, _ := strconv.Atoi(os.Getenv("ELEMENTS_REGTEST_PORT"))
+	if port == 0 {
+		port = 28432
+	}
+	user := os.Getenv("ELEMENTS_REGTEST_USER")
+	if len(user) == 0 {
+		user = "bank-wallet"
+	}
+	password := os.Getenv("ELEMENTS_REGTEST_PASSWORD")
 	if len(password) == 0 {
 		password = "password1"
 	}
