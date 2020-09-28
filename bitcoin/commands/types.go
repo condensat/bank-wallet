@@ -188,3 +188,9 @@ type SignedTransaction struct {
 	Complete bool   `json:"complete"`
 	Hex      string `json:"hex"`
 }
+
+type MempoolAccept struct {
+	TxID    string `json:"txid"`
+	Allowed bool   `json:"allowed"`
+	Reason  string `json:"reject-reason"`
+}
