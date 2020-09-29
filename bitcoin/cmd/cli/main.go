@@ -12,6 +12,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/condensat/bank-wallet/bitcoin"
+	"github.com/condensat/bank-wallet/chain"
 	"github.com/condensat/bank-wallet/common"
 	"github.com/condensat/bank-wallet/rpc"
 
@@ -38,15 +40,66 @@ type ChainsOptions struct {
 
 func main() {
 	var command string
+	var destAddress string
+	var changeAddress string
+	var assetAddress string
+	var tokenAddress string
 
 	flag.StringVar(&command, "command", "", "Sub command to start")
 
+	flag.StringVar(&destAddress, "dest", "", "Address to send L-BTC")
+	flag.StringVar(&changeAddress, "change", "", "Address to send change")
+	flag.StringVar(&assetAddress, "asset", "", "Address to send asset")
+	flag.StringVar(&tokenAddress, "token", "", "Address to send token")
 	flag.Parse()
 
 	ctx := context.Background()
 
 	// add CryptoMode to context
 	ctx = common.CryptoModeContext(ctx, common.CryptoModeBitcoinCore)
+
+	// load rpc clients configurations
+	hostname := os.Getenv("ELEMENTS_REGTEST_HOSTNAME")
+	if len(hostname) == 0 {
+		hostname = "elements_regtest"
+	}
+	port, _ := strconv.Atoi(os.Getenv("ELEMENTS_REGTEST_PORT"))
+	if port == 0 {
+		port = 28432
+	}
+	user := os.Getenv("ELEMENTS_REGTEST_USER")
+	if len(user) == 0 {
+		user = "bank-wallet"
+	}
+	password := os.Getenv("ELEMENTS_REGTEST_PASSWORD")
+	if len(password) == 0 {
+		password = "password1"
+	}
+	chainOption := []ChainOption{{
+		Chain:    "liquid-regtest",
+		HostName: hostname,
+		Port:     port,
+		User:     user,
+		Pass:     password,
+	}}
+
+	chainsOptions := ChainsOptions{
+		chainOption,
+	}
+
+	// create all rpc clients
+	for _, chainOption := range chainsOptions.Chains {
+
+		ctx = common.ChainClientContext(ctx, chainOption.Chain, bitcoin.New(ctx, bitcoin.BitcoinOptions{
+			ServerOptions: common.ServerOptions{
+				Protocol: "http",
+				HostName: chainOption.HostName,
+				Port:     chainOption.Port,
+			},
+			User: chainOption.User,
+			Pass: chainOption.Pass,
+		}))
+	}
 
 	var err error
 	switch command {
@@ -60,6 +113,16 @@ func main() {
 
 	case "RawTransactionElements":
 		err = RawTransactionElements(ctx)
+
+	// Liquid Assets
+
+	case "AssetIssuance":
+		err = AssetIssuance(ctx,
+			destAddress,
+			changeAddress,
+			assetAddress,
+			tokenAddress,
+		)
 
 	default:
 		log.Fatalf("Unknown command %s.", command)
@@ -213,6 +276,41 @@ func RawTransactionElements(ctx context.Context) error {
 		log.Printf("Reject-reason: %+v", accepted.Reason)
 		return errors.New("TestMempoolAccept failed")
 	}
+
+	return nil
+}
+
+// Liquid Assets
+
+func AssetIssuance(ctx context.Context, destAddress, changeAddress, assetAddress, tokenAddress string) error {
+	client := common.ChainClientFromContext(ctx, "liquid-regtest")
+	if client == nil {
+		return errors.New("Can't create Elements client")
+	}
+
+	assetInfo := common.IssuanceRequest{
+		Chain:              "liquid-regtest",
+		IssuerID:           42,
+		Mode:               common.AssetIssuanceModeWithToken,
+		AssetPublicAddress: assetAddress,
+		AssetIssuedAmount:  1000,
+		TokenPublicAddress: tokenAddress,
+		TokenIssuedAmount:  1,
+	}
+
+	assetIssued, err := chain.IssueNewAsset(
+		ctx,
+		changeAddress,
+		common.SpendInfo{
+			PublicAddress: destAddress,
+			Amount:        0.001},
+		assetInfo)
+	if err != nil {
+		log.Printf("Asset Issuance failed")
+		return err
+	}
+
+	log.Printf("Asset %s issued in Tx %s", assetIssued.AssetID, assetIssued.TxID)
 
 	return nil
 }

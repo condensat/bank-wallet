@@ -178,10 +178,27 @@ type FundRawTransactionOptions struct {
 	SubtractFeeFromOutputs []int  `json:"subtractFeeFromOutputs,omitempty"`
 }
 
+type RawIssueAssetOptions struct {
+	AssetAmount  float64 `json:"asset_amount"`
+	AssetAddress string  `json:"asset_address"`
+	TokenAmount  float64 `json:"token_amount,omitempty"`
+	TokenAddress string  `json:"token_address,omitempty"`
+	Blind        bool    `json:"blind"`
+	ContractHash string  `json:"contract_hash,omitempty"`
+}
+
 type FundedTransaction struct {
 	Changepos int     `json:"changepos"`
 	Fee       float64 `json:"fee"`
 	Hex       string  `json:"hex"`
+}
+
+type IssuedTransaction struct {
+	Hex     string `json:"hex"`
+	Vout    int    `json:"vout"`
+	Entropy string `json:"entropy"`
+	Asset   string `json:"asset"`
+	Token   string `json:"token"`
 }
 
 type SignedTransaction struct {

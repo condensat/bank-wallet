@@ -25,6 +25,8 @@ type ChainClient interface {
 	GetTransaction(ctx context.Context, txID string) (TransactionInfo, error)
 
 	SpendFunds(ctx context.Context, changeAddress string, inputs []UTXOInfo, outputs []SpendInfo, addressInfo GetAddressInfo, blindTransaction bool) (SpendTx, error)
+
+	IssueNewAsset(ctx context.Context, changeAddress string, outputs SpendInfo, request IssuanceRequest, addressInfo GetAddressInfo, blindTransaction bool) (IssuanceResponse, error)
 }
 
 // SsmClient interface specification for crypto-ssm

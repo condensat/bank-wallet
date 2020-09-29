@@ -9,6 +9,7 @@ import (
 )
 
 type CryptoMode string
+type AssetIssuanceMode string
 
 const (
 	CryptoModeBitcoinCore CryptoMode = "bitcoin-core"
@@ -20,6 +21,13 @@ type ServerOptions struct {
 	HostName string
 	Port     int
 }
+
+const (
+	AssetIssuanceModeWithAsset             AssetIssuanceMode = "asset-only"
+	AssetIssuanceModeWithToken             AssetIssuanceMode = "with-token"
+	AssetIssuanceModeWithContract          AssetIssuanceMode = "with-contract"
+	AssetIssuanceModeWithTokenWithContract AssetIssuanceMode = "with-token-and-contract"
+)
 
 const (
 	ElementsRegtestHash string = "b2e15d0d7a0c94e4e2ce0fe6e8691b9e451377f6e46e8045a86f7c4b5d4f0f23"
@@ -85,6 +93,31 @@ type SpendTx struct {
 	TxID string
 }
 
+type IssuanceRequest struct {
+	Chain              string            // mainly elements-regtest or LiquidV1 now, but can be useful for other chains later
+	IssuerID           uint64            // User ID used for communication with our db
+	Mode               AssetIssuanceMode // Issue an asset either with a reissuance token, a contract hash or both
+	BlindIssuance      bool              // Issuance can be blinded or not
+	AssetPublicAddress string            // Address we send the newly issued asset to
+	AssetIssuedAmount  float64           // Max 21_000_000.0, but can be reissued many times
+
+	// Optional
+	TokenPublicAddress string  // Address we send the reissuance token to
+	TokenIssuedAmount  float64 // I'd recommend it to be either 0 or 0.00000001 (1 sat)
+	ContractHash       string  // 32B hash we can commit directly inside the asset ID
+}
+
+type IssuanceResponse struct {
+	Chain     string   // mainly elements-regtest or LiquidV1 now, but can be useful for other chains later
+	IssuerID  uint64   // User ID used for communication with our db
+	AssetID   string   // This is the hex 64B Identifier of the asset. It is computed determinastically from a txid, a vout and an optional contract hash
+	TokenID   string   // hex 64B identifier of the token that allows to reissue the asset
+	TxID      string   // ID of the issuance transaction
+	Vin       UTXOInfo // Txid and vout of the input the issuance is hooked to, used to compute asset ID with contract hash if any
+	AssetVout int      // The vout of the new asset
+	TokenVout int      // The vout of the token. We need this for reissuance
+	Entropy   string   // Entropy is calculated with the issuance vin and contract hash if any
+}
 type WalletInfo struct {
 	Chain  string
 	Height int
@@ -125,4 +158,95 @@ func (p *WalletStatus) Encode() ([]byte, error) {
 
 func (p *WalletStatus) Decode(data []byte) error {
 	return messaging.DecodeObject(data, messaging.BankObject(p))
+}
+
+func (p *IssuanceRequest) Encode() ([]byte, error) {
+	return messaging.EncodeObject(p)
+}
+
+func (p *IssuanceRequest) Decode(data []byte) error {
+	return messaging.DecodeObject(data, messaging.BankObject(p))
+}
+
+func (p *IssuanceResponse) Encode() ([]byte, error) {
+	return messaging.EncodeObject(p)
+}
+
+func (p *IssuanceResponse) Decode(data []byte) error {
+	return messaging.DecodeObject(data, messaging.BankObject(p))
+}
+
+func (p *IssuanceRequest) IsValid() bool {
+	switch p.Mode {
+	case AssetIssuanceModeWithAsset:
+		if len(p.AssetPublicAddress) == 0 {
+			return false
+		}
+		if p.AssetIssuedAmount <= 0.0 {
+			return false
+		}
+		if len(p.TokenPublicAddress) != 0 {
+			return false
+		}
+		if p.TokenIssuedAmount > 0.0 {
+			return false
+		}
+		if len(p.ContractHash) != 0 {
+			return false
+		}
+		return true
+	case AssetIssuanceModeWithToken:
+		if len(p.AssetPublicAddress) == 0 {
+			return false
+		}
+		if p.AssetIssuedAmount <= 0.0 {
+			return false
+		}
+		if len(p.TokenPublicAddress) == 0 {
+			return false
+		}
+		if p.TokenIssuedAmount <= 0.0 {
+			return false
+		}
+		if len(p.ContractHash) != 0 {
+			return false
+		}
+		return true
+	case AssetIssuanceModeWithContract:
+		if len(p.AssetPublicAddress) == 0 {
+			return false
+		}
+		if p.AssetIssuedAmount <= 0.0 {
+			return false
+		}
+		if len(p.TokenPublicAddress) != 0 {
+			return false
+		}
+		if p.TokenIssuedAmount > 0.0 {
+			return false
+		}
+		if len(p.ContractHash) == 0 {
+			return false
+		}
+		return true
+	case AssetIssuanceModeWithTokenWithContract:
+		if len(p.AssetPublicAddress) == 0 {
+			return false
+		}
+		if p.AssetIssuedAmount <= 0.0 {
+			return false
+		}
+		if len(p.TokenPublicAddress) == 0 {
+			return false
+		}
+		if p.TokenIssuedAmount <= 0.0 {
+			return false
+		}
+		if len(p.ContractHash) == 0 {
+			return false
+		}
+		return true
+	default:
+		return false
+	}
 }

@@ -565,6 +565,31 @@ func SpendFunds(ctx context.Context, chain string, changeAddress string, spendIn
 	return tx, nil
 }
 
+func IssueNewAsset(ctx context.Context, changeAddress string, spendInfos common.SpendInfo, request common.IssuanceRequest) (common.IssuanceResponse, error) {
+	log := logger.Logger(ctx).WithField("Method", "wallet.IssueNewAsset")
+
+	log = log.WithField("Chain", request.Chain)
+
+	client := common.ChainClientFromContext(ctx, request.Chain)
+	if client == nil {
+		return common.IssuanceResponse{}, ErrChainClientNotFound
+	}
+
+	// Create, Fund, Sign & Broadcast transaction
+	// TODO: sanitycheck on network
+	// TODO: get blindtransaction from request arguments
+	blindTransaction := blindTransactionFromChain(request.Chain)
+
+	newAsset, err := client.IssueNewAsset(ctx, changeAddress, spendInfos, request, getAddressInfoFromDatabase, blindTransaction)
+	if err != nil {
+		log.WithError(err).
+			Error("Failed to issue new asset")
+		return common.IssuanceResponse{}, err
+	}
+
+	return newAsset, nil
+}
+
 func getAddressInfoFromDatabase(ctx context.Context, address string, isUnconfidential bool) (commands.SsmPath, error) {
 	log := logger.Logger(ctx).WithField("Method", "wallet.chain.getAddressInfoFromDatabase")
 	db := appcontext.Database(ctx)
