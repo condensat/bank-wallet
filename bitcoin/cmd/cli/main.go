@@ -44,6 +44,7 @@ func main() {
 	var changeAddress string
 	var assetAddress string
 	var tokenAddress string
+	var reissuedAsset string
 
 	flag.StringVar(&command, "command", "", "Sub command to start")
 
@@ -51,6 +52,7 @@ func main() {
 	flag.StringVar(&changeAddress, "change", "", "Address to send change")
 	flag.StringVar(&assetAddress, "asset", "", "Address to send asset")
 	flag.StringVar(&tokenAddress, "token", "", "Address to send token")
+	flag.StringVar(&reissuedAsset, "reissue", "", "Asset to reissue")
 	flag.Parse()
 
 	ctx := context.Background()
@@ -123,6 +125,9 @@ func main() {
 			assetAddress,
 			tokenAddress,
 		)
+
+	case "Reissuance":
+		err = Reissuance(ctx, changeAddress, assetAddress, tokenAddress, reissuedAsset)
 
 	default:
 		log.Fatalf("Unknown command %s.", command)
@@ -311,6 +316,67 @@ func AssetIssuance(ctx context.Context, destAddress, changeAddress, assetAddress
 	}
 
 	log.Printf("Asset %s issued in Tx %s", assetIssued.AssetID, assetIssued.TxID)
+
+	return nil
+}
+
+func Reissuance(ctx context.Context, changeAddress, assetAddress, tokenAddress, assetID string) error {
+	client := common.ChainClientFromContext(ctx, "liquid-regtest")
+	if client == nil {
+		return errors.New("Can't create Elements client")
+	}
+
+	var request common.ReissuanceRequest
+
+	issuanceInfo, err := client.ListIssuances(ctx, assetID)
+	if err != nil {
+		return err
+	}
+
+	if len(issuanceInfo) == 0 {
+		return errors.New("No asset issued")
+	}
+	log.Printf("issuanceInfo is %+v", issuanceInfo)
+
+	var issuance commands.ListIssuancesInfo
+	for _, info := range issuanceInfo {
+		if info.IsReissuance {
+			continue
+		}
+		issuance.TxID = info.TxID
+		issuance.Entropy = info.Entropy
+		issuance.Asset = info.Asset
+		issuance.Token = info.Token
+		issuance.Vin = info.Vin
+		issuance.AssetAmount = info.AssetAmount
+		issuance.TokenAmount = info.TokenAmount
+		issuance.IsReissuance = info.IsReissuance
+		issuance.AssetBlinds = info.AssetBlinds
+		issuance.TokenBlinds = info.TokenBlinds
+		break
+	}
+
+	unspentInfo, err := client.ListUnspentWithAssetWithMaxCount(ctx, 0, 9999, issuance.Token, 1)
+	if err != nil {
+		return err
+	}
+	log.Printf("unspentinfo is %+v", unspentInfo)
+	request.Chain = "liquid-regtest"
+	request.IssuerID = 42
+	request.AssetID = assetID
+	request.AssetBlinder = unspentInfo[0].Blinding.AssetBlinder
+	request.TokenAmount = unspentInfo[0].Amount // there's no point not spending the whole UTXO here
+	request.AssetIssuedAmount = 1000.00000002
+
+	request.TokenPublicAddress = tokenAddress
+	request.AssetPublicAddress = assetAddress
+
+	reissued, err := chain.ReissueAsset(ctx, changeAddress, request)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Asset %s reissued in Tx %s", request.AssetID, reissued.TxID)
 
 	return nil
 }

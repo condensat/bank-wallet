@@ -188,6 +188,14 @@ type RawIssueAssetOptions struct {
 	ContractHash string  `json:"contract_hash,omitempty"`
 }
 
+type RawReissueAssetOptions struct {
+	AssetAmount  float64 `json:"asset_amount"`
+	AssetAddress string  `json:"asset_address"`
+	Entropy      string  `json:"entropy"`
+	AssetBlinder string  `json:"asset_blinder"`
+	InputIndex   int     `json:"input_index"`
+}
+
 type FundedTransaction struct {
 	Changepos int     `json:"changepos"`
 	Fee       float64 `json:"fee"`
@@ -200,6 +208,10 @@ type IssuedTransaction struct {
 	Entropy string `json:"entropy"`
 	Asset   string `json:"asset"`
 	Token   string `json:"token"`
+}
+
+type ReissuedTransaction struct {
+	Hex Transaction `json:"hex"`
 }
 
 type SignedTransaction struct {

@@ -49,6 +49,10 @@ type SsmAddress struct {
 	BlindingKey string
 }
 
+type ElementsBlindingInfo struct {
+	AssetBlinder string
+}
+
 type TransactionInfo struct {
 	Chain         string
 	Account       string
@@ -59,6 +63,7 @@ type TransactionInfo struct {
 	Amount        float64
 	Confirmations int64
 	Spendable     bool
+	Blinding      ElementsBlindingInfo
 }
 
 type AddressInfo struct {
@@ -143,6 +148,31 @@ type IssuanceResponse struct {
 	TokenVout int      // The vout of the token. We need this for reissuance
 	Entropy   string   // Entropy is calculated with the issuance vin and contract hash if any
 }
+
+type ReissuanceRequest struct {
+	Chain              string
+	IssuerID           uint64  // User ID used for communication with our db
+	AssetID            string  // Asset that has been reissued
+	AssetPublicAddress string  // Address to reissue assets to
+	AssetIssuedAmount  float64 // Max 21_000_000.0, but can be reissued many times
+
+	TokenID            string  // hex 64B identifier of the token that allows to reissue the asset
+	TokenPublicAddress string  // Address to send tokens to
+	TokenAmount        float64 // amount locked in the spent UTXO
+
+	Entropy      string // some entropy determined at issuance, and that we can get from listissuance() call
+	AssetBlinder string // From the output being spent
+	InputIndex   int    // To which Vin we want to attach the reissuance
+}
+
+type ReissuanceResponse struct {
+	Chain     string
+	IssuerID  uint64
+	TxID      string // txid of the reissuance transaction
+	AssetVout int    // vout of the newly issued assets
+	TokenVout int    // vout of the reissuance token: this is what we will need next time to issue
+}
+
 type WalletInfo struct {
 	Chain  string
 	Height int
@@ -214,6 +244,22 @@ func (p *IssuanceResponse) Encode() ([]byte, error) {
 }
 
 func (p *IssuanceResponse) Decode(data []byte) error {
+	return messaging.DecodeObject(data, messaging.BankObject(p))
+}
+
+func (p *ReissuanceRequest) Encode() ([]byte, error) {
+	return messaging.EncodeObject(p)
+}
+
+func (p *ReissuanceRequest) Decode(data []byte) error {
+	return messaging.DecodeObject(data, messaging.BankObject(p))
+}
+
+func (p *ReissuanceResponse) Encode() ([]byte, error) {
+	return messaging.EncodeObject(p)
+}
+
+func (p *ReissuanceResponse) Decode(data []byte) error {
 	return messaging.DecodeObject(data, messaging.BankObject(p))
 }
 

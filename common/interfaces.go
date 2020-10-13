@@ -20,6 +20,7 @@ type ChainClient interface {
 	GetBlockCount(ctx context.Context) (int64, error)
 	ListUnspent(ctx context.Context, minConf, maxConf int, addresses ...string) ([]TransactionInfo, error)
 	ListUnspentByAsset(ctx context.Context, minConf, maxConf int, asset string) ([]TransactionInfo, error)
+	ListUnspentWithAssetWithMaxCount(ctx context.Context, minConf, maxConf int, asset string, maxCount int) ([]TransactionInfo, error)
 	LockUnspent(ctx context.Context, unlock bool, transactions ...TransactionInfo) error
 	ListLockUnspent(ctx context.Context) ([]TransactionInfo, error)
 	GetTransaction(ctx context.Context, txID string) (TransactionInfo, error)
@@ -28,6 +29,7 @@ type ChainClient interface {
 
 	IssueNewAsset(ctx context.Context, changeAddress string, outputs SpendInfo, request IssuanceRequest, addressInfo GetAddressInfo, blindTransaction bool) (IssuanceResponse, error)
 	ListIssuances(ctx context.Context, asset string) ([]IssuanceInfo, error)
+	ReissueAsset(ctx context.Context, changeAddress string, input UTXOInfo, request ReissuanceRequest, addressInfo GetAddressInfo, blindTransaction bool) (ReissuanceResponse, error)
 }
 
 // SsmClient interface specification for crypto-ssm

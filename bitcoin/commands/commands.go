@@ -30,6 +30,7 @@ const (
 	CmdSendRawTransaction           = Command("sendrawtransaction")
 	CmdTestMempoolAccept            = Command("testmempoolaccept")
 
-	CmdRawIssueAsset = Command("rawissueasset")
-	CmdListIssuances = Command("listissuances")
+	CmdRawIssueAsset   = Command("rawissueasset")
+	CmdListIssuances   = Command("listissuances")
+	CmdRawReissueAsset = Command("rawreissueasset")
 )

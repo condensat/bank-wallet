@@ -609,6 +609,78 @@ func IssueNewAsset(ctx context.Context, changeAddress string, spendInfos common.
 	return newAsset, nil
 }
 
+func ReissueAsset(ctx context.Context, changeAddress string, request common.ReissuanceRequest) (common.ReissuanceResponse, error) {
+	log := logger.Logger(ctx).WithField("Method", "wallet.ReissueAsset")
+
+	log = log.WithField("Chain", request.Chain)
+
+	client := common.ChainClientFromContext(ctx, request.Chain)
+	if client == nil {
+		return common.ReissuanceResponse{}, ErrChainClientNotFound
+	}
+
+	ListUnspentMaxCount := 1
+	ListUnspentMinConf := 0
+	ListUnspentMaxConf := 9999
+
+	var input common.UTXOInfo
+
+	issuanceInfo, err := client.ListIssuances(ctx, request.AssetID)
+	if err != nil {
+		log.WithError(err).
+			Error("failed ListIssuances")
+		return common.ReissuanceResponse{}, err
+	}
+
+	if len(issuanceInfo) == 0 {
+		log.Error("no issuance listed")
+		return common.ReissuanceResponse{}, errors.New("Reissuance failed")
+	}
+
+	i := 0
+	for i < len(issuanceInfo) && issuanceInfo[i].IsReissuance == true {
+		i++
+	}
+	request.Entropy = issuanceInfo[i].Entropy
+	request.TokenID = issuanceInfo[i].Token
+
+	unspentInfo, err := client.ListUnspentWithAssetWithMaxCount(
+		ctx,
+		ListUnspentMinConf,
+		ListUnspentMaxConf,
+		request.TokenID,
+		ListUnspentMaxCount)
+	if err != nil {
+		log.WithError(err).
+			Error("failed ListUnspentWithAssetWithMaxCount")
+		return common.ReissuanceResponse{}, err
+	}
+
+	if len(unspentInfo) == 0 {
+		log.Errorf("no reissuance token to spend")
+		return common.ReissuanceResponse{}, errors.New("Reissuance failed")
+	}
+
+	input.TxID = unspentInfo[0].TxID
+	input.Vout = int(unspentInfo[0].Vout)
+	input.Asset = issuanceInfo[i].Token
+	input.Amount = unspentInfo[0].Amount // there's no point not spending the whole UTXO here
+	request.TokenAmount = unspentInfo[0].Amount
+
+	request.AssetBlinder = unspentInfo[0].Blinding.AssetBlinder
+
+	blindTransaction := blindTransactionFromChain(request.Chain)
+
+	reissuance, err := client.ReissueAsset(ctx, changeAddress, input, request, getAddressInfoFromDatabase, blindTransaction)
+	if err != nil {
+		log.WithError(err).
+			Error("Failed to reissue asset")
+		return common.ReissuanceResponse{}, err
+	}
+
+	return reissuance, nil
+}
+
 func getAddressInfoFromDatabase(ctx context.Context, address string, isUnconfidential bool) (commands.SsmPath, error) {
 	log := logger.Logger(ctx).WithField("Method", "wallet.chain.getAddressInfoFromDatabase")
 	db := appcontext.Database(ctx)
