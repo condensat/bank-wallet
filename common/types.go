@@ -5,7 +5,7 @@
 package common
 
 import (
-	"github.com/condensat/bank-core"
+	"github.com/condensat/bank-core/messaging"
 )
 
 type CryptoMode string
@@ -14,6 +14,12 @@ const (
 	CryptoModeBitcoinCore CryptoMode = "bitcoin-core"
 	CryptoModeCryptoSsm   CryptoMode = "crypto-ssm"
 )
+
+type ServerOptions struct {
+	Protocol string
+	HostName string
+	Port     int
+}
 
 type CryptoAddress struct {
 	CryptoAddressID  uint64
@@ -86,33 +92,33 @@ type WalletStatus struct {
 }
 
 func (p *CryptoAddress) Encode() ([]byte, error) {
-	return bank.EncodeObject(p)
+	return messaging.EncodeObject(p)
 }
 
 func (p *CryptoAddress) Decode(data []byte) error {
-	return bank.DecodeObject(data, bank.BankObject(p))
+	return messaging.DecodeObject(data, messaging.BankObject(p))
 }
 
 func (p *AddressInfo) Encode() ([]byte, error) {
-	return bank.EncodeObject(p)
+	return messaging.EncodeObject(p)
 }
 
 func (p *AddressInfo) Decode(data []byte) error {
-	return bank.DecodeObject(data, bank.BankObject(p))
+	return messaging.DecodeObject(data, messaging.BankObject(p))
 }
 
 func (p *WalletInfo) Encode() ([]byte, error) {
-	return bank.EncodeObject(p)
+	return messaging.EncodeObject(p)
 }
 
 func (p *WalletInfo) Decode(data []byte) error {
-	return bank.DecodeObject(data, bank.BankObject(p))
+	return messaging.DecodeObject(data, messaging.BankObject(p))
 }
 
 func (p *WalletStatus) Encode() ([]byte, error) {
-	return bank.EncodeObject(p)
+	return messaging.EncodeObject(p)
 }
 
 func (p *WalletStatus) Decode(data []byte) error {
-	return bank.DecodeObject(data, bank.BankObject(p))
+	return messaging.DecodeObject(data, messaging.BankObject(p))
 }
