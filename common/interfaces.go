@@ -30,6 +30,7 @@ type ChainClient interface {
 	IssueNewAsset(ctx context.Context, changeAddress string, outputs SpendInfo, request IssuanceRequest, addressInfo GetAddressInfo, blindTransaction bool) (IssuanceResponse, error)
 	ListIssuances(ctx context.Context, asset string) ([]IssuanceInfo, error)
 	ReissueAsset(ctx context.Context, changeAddress string, input UTXOInfo, request ReissuanceRequest, addressInfo GetAddressInfo, blindTransaction bool) (ReissuanceResponse, error)
+	BurnAsset(ctx context.Context, destAddress, changeAddress string, request BurnRequest, addressInfo GetAddressInfo, blindTransaction bool) (BurnResponse, error)
 }
 
 // SsmClient interface specification for crypto-ssm

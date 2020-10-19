@@ -173,6 +173,20 @@ type ReissuanceResponse struct {
 	TokenVout int    // vout of the reissuance token: this is what we will need next time to issue
 }
 
+type BurnRequest struct {
+	Chain    string
+	IssuerID uint64
+	Asset    string  // asset to burn
+	Amount   float64 // amount of asset to burn
+}
+
+type BurnResponse struct {
+	Chain    string
+	IssuerID uint64
+	TxID     string // txid of the transaction that burned the asset
+	Vout     int    // index of the OP_RETURN output that burn the asset
+}
+
 type WalletInfo struct {
 	Chain  string
 	Height int
@@ -260,6 +274,22 @@ func (p *ReissuanceResponse) Encode() ([]byte, error) {
 }
 
 func (p *ReissuanceResponse) Decode(data []byte) error {
+	return messaging.DecodeObject(data, messaging.BankObject(p))
+}
+
+func (p *BurnRequest) Encode() ([]byte, error) {
+	return messaging.EncodeObject(p)
+}
+
+func (p *BurnRequest) Decode(data []byte) error {
+	return messaging.DecodeObject(data, messaging.BankObject(p))
+}
+
+func (p *BurnResponse) Encode() ([]byte, error) {
+	return messaging.EncodeObject(p)
+}
+
+func (p *BurnResponse) Decode(data []byte) error {
 	return messaging.DecodeObject(data, messaging.BankObject(p))
 }
 

@@ -681,6 +681,27 @@ func ReissueAsset(ctx context.Context, changeAddress string, request common.Reis
 	return reissuance, nil
 }
 
+func BurnAsset(ctx context.Context, destAddress, changeAddress string, request common.BurnRequest) (common.BurnResponse, error) {
+	log := logger.Logger(ctx).WithField("Method", "wallet.BurnAsset")
+
+	log = log.WithField("Chain", request.Chain)
+
+	client := common.ChainClientFromContext(ctx, request.Chain)
+	if client == nil {
+		return common.BurnResponse{}, ErrChainClientNotFound
+	}
+
+	blindTransaction := blindTransactionFromChain(request.Chain)
+	burn, err := client.BurnAsset(ctx, destAddress, changeAddress, request, getAddressInfoFromDatabase, blindTransaction)
+	if err != nil {
+		log.WithError(err).
+			Error("Failed to burn asset")
+		return common.BurnResponse{}, err
+	}
+
+	return burn, nil
+}
+
 func getAddressInfoFromDatabase(ctx context.Context, address string, isUnconfidential bool) (commands.SsmPath, error) {
 	log := logger.Logger(ctx).WithField("Method", "wallet.chain.getAddressInfoFromDatabase")
 	db := appcontext.Database(ctx)

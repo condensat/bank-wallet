@@ -45,6 +45,8 @@ func main() {
 	var assetAddress string
 	var tokenAddress string
 	var reissuedAsset string
+	var burnAsset string
+	var amountBurn float64
 
 	flag.StringVar(&command, "command", "", "Sub command to start")
 
@@ -53,6 +55,8 @@ func main() {
 	flag.StringVar(&assetAddress, "asset", "", "Address to send asset")
 	flag.StringVar(&tokenAddress, "token", "", "Address to send token")
 	flag.StringVar(&reissuedAsset, "reissue", "", "Asset to reissue")
+	flag.StringVar(&burnAsset, "burnAsset", "", "Asset to burn")
+	flag.Float64Var(&amountBurn, "burnAmount", 0.0, "Amount of assets to burn")
 	flag.Parse()
 
 	ctx := context.Background()
@@ -128,6 +132,14 @@ func main() {
 
 	case "Reissuance":
 		err = Reissuance(ctx, changeAddress, assetAddress, tokenAddress, reissuedAsset)
+
+	case "BurnAsset":
+		err = BurnAsset(ctx,
+			destAddress,
+			changeAddress,
+			burnAsset,
+			amountBurn,
+		)
 
 	default:
 		log.Fatalf("Unknown command %s.", command)
@@ -377,6 +389,22 @@ func Reissuance(ctx context.Context, changeAddress, assetAddress, tokenAddress, 
 	}
 
 	log.Printf("Asset %s reissued in Tx %s", request.AssetID, reissued.TxID)
+
+	return nil
+}
+
+func BurnAsset(ctx context.Context, destAddress, changeAddress, asset string, amount float64) error {
+	request := common.BurnRequest{
+		Chain:    "liquid-regtest",
+		IssuerID: 42,
+		Asset:    asset,
+		Amount:   amount,
+	}
+	burned, err := chain.BurnAsset(ctx, destAddress, changeAddress, request)
+	if err != nil {
+		return err
+	}
+	log.Printf("%f of asset %s have been burnt in Tx %s", amount, asset, burned.TxID)
 
 	return nil
 }
