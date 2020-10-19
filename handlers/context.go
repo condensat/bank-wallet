@@ -28,6 +28,7 @@ type ChainHandler interface {
 
 	WalletInfo(ctx context.Context, chain string) (common.WalletInfo, error)
 
+	ListIssuances(ctx context.Context, request common.ListIssuancesRequest) ([]common.IssuanceInfo, error)
 	IssueNewAsset(ctx context.Context, changeAddress string, spendInfos common.SpendInfo, request common.IssuanceRequest) (common.IssuanceResponse, error)
 }
 

@@ -68,6 +68,22 @@ func NextDeposit(ctx context.Context, chain string) error {
 	return nil
 }
 
+func ListIssuances(ctx context.Context, chain, asset string) error {
+	log := logger.Logger(ctx).WithField("Method", "ListIssuances")
+
+	answer, err := client.ListIssuances(ctx, chain, IssuerID, asset)
+	if err != nil {
+		return err
+	}
+
+	log.WithFields(logrus.Fields{
+		"Chain":     answer.Chain,
+		"Issuer ID": answer.IssuerID,
+		"Issuances": answer.Issuances,
+	}).Info("ListIssuances")
+	return nil
+}
+
 func AssetIssuance(ctx context.Context, chain string, issuanceMode string, assetAmount, tokenAmount float64, contractHash string) error {
 	log := logger.Logger(ctx).WithField("Method", "AssetIssuance")
 
@@ -142,6 +158,7 @@ func main() {
 	var chain string
 	var contractHash string
 	var issuanceMode string
+	var assetID string
 	var assetAmount float64
 	var tokenAmount float64
 	flag.StringVar(&command, "cmd", "", "Possible commands: [getDepositAddress, listIssuances, issueAsset, reissueAsset, burnAsset]")
@@ -150,6 +167,7 @@ func main() {
 	flag.Float64Var(&assetAmount, "assetAmount", 0.0, "amount of the new asset to issue")
 	flag.Float64Var(&tokenAmount, "tokenAmount", 0.0, "amount of the reissuance token to issue(issueAsset only)")
 	flag.StringVar(&contractHash, "contractHash", "", "hash to commit in the issuance(issueAsset only)")
+	flag.StringVar(&assetID, "assetID", "", "ID of the asset to list/reissue/burn")
 	args := parseArgs()
 
 	ctx := context.Background()
@@ -163,6 +181,8 @@ func main() {
 	switch command {
 	case "getDepositAddress":
 		err = NextDeposit(ctx, chain)
+	case "listIssuances":
+		err = ListIssuances(ctx, chain, assetID)
 	case "issueAsset":
 		err = AssetIssuance(ctx, chain, issuanceMode, assetAmount, tokenAmount, contractHash)
 	default:
