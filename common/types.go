@@ -93,6 +93,31 @@ type SpendTx struct {
 	TxID string
 }
 
+type ListIssuancesRequest struct {
+	Chain    string
+	IssuerID uint64
+	Asset    string
+}
+
+type IssuanceInfo struct {
+	TxID         string  // TxID of the issuance
+	Entropy      string  // We need it for reissuances
+	Asset        string  // Asset ID (64B hex)
+	Token        string  // reissuance token ID, computed from asset ID
+	Vin          int     // index of the input the issuance is "hooked" to
+	AssetAmount  float64 // amount issued of the asset
+	TokenAmount  float64 // amount of reissuance token (can't be reissued)
+	IsReissuance bool    // false == initial issuance
+	AssetBlinds  string  // blinding factor for the amount of asset issued
+	TokenBlinds  string  // blinding factor for the amount of token issued
+}
+
+type IssuanceList struct {
+	Chain     string
+	IssuerID  uint64
+	Issuances []IssuanceInfo
+}
+
 type IssuanceRequest struct {
 	Chain              string            // mainly elements-regtest or LiquidV1 now, but can be useful for other chains later
 	IssuerID           uint64            // User ID used for communication with our db
@@ -157,6 +182,22 @@ func (p *WalletStatus) Encode() ([]byte, error) {
 }
 
 func (p *WalletStatus) Decode(data []byte) error {
+	return messaging.DecodeObject(data, messaging.BankObject(p))
+}
+
+func (p *ListIssuancesRequest) Encode() ([]byte, error) {
+	return messaging.EncodeObject(p)
+}
+
+func (p *ListIssuancesRequest) Decode(data []byte) error {
+	return messaging.DecodeObject(data, messaging.BankObject(p))
+}
+
+func (p *IssuanceList) Encode() ([]byte, error) {
+	return messaging.EncodeObject(p)
+}
+
+func (p *IssuanceList) Decode(data []byte) error {
 	return messaging.DecodeObject(data, messaging.BankObject(p))
 }
 

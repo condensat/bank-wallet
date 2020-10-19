@@ -565,6 +565,25 @@ func SpendFunds(ctx context.Context, chain string, changeAddress string, spendIn
 	return tx, nil
 }
 
+func ListIssuances(ctx context.Context, request common.ListIssuancesRequest) ([]common.IssuanceInfo, error) {
+	log := logger.Logger(ctx).WithField("Method", "wallet.ListIssuances")
+
+	log = log.WithField("Chain", request.Chain)
+
+	client := common.ChainClientFromContext(ctx, request.Chain)
+	if client == nil {
+		return nil, ErrChainClientNotFound
+	}
+
+	list, err := client.ListIssuances(ctx, request.Asset)
+	if err != nil {
+		log.WithError(err).
+			Error("Failed to list past issuances")
+		return nil, err
+	}
+	return list, nil
+}
+
 func IssueNewAsset(ctx context.Context, changeAddress string, spendInfos common.SpendInfo, request common.IssuanceRequest) (common.IssuanceResponse, error) {
 	log := logger.Logger(ctx).WithField("Method", "wallet.IssueNewAsset")
 
@@ -633,6 +652,8 @@ func getAddressInfoFromDatabase(ctx context.Context, address string, isUnconfide
 func blindTransactionFromChain(chain string) bool {
 	switch chain {
 	case "liquid-mainnet":
+		return true
+	case "liquid-regtest":
 		return true
 
 	default:

@@ -243,6 +243,38 @@ func (p *BitcoinClient) listUnspent(ctx context.Context, minConf, maxConf int, f
 	return result, nil
 }
 
+func (p *BitcoinClient) ListIssuances(ctx context.Context, asset string) ([]common.IssuanceInfo, error) {
+	log := logger.Logger(ctx).WithField("Method", "bitcoin.listIssuances")
+	client := p.client
+	if p.client == nil {
+		return nil, ErrInternalError
+	}
+
+	list, err := commands.ListIssuances(ctx, client.Client, commands.AssetID(asset))
+	if err != nil {
+		log.WithError(err).
+			Error("ListIssuances failed")
+		return nil, ErrRPCError
+	}
+
+	var result []common.IssuanceInfo
+	for _, issuance := range list {
+		result = append(result, common.IssuanceInfo{
+			TxID:         issuance.TxID,
+			Entropy:      issuance.Entropy,
+			Asset:        issuance.Asset,
+			Token:        issuance.Token,
+			Vin:          issuance.Vin,
+			AssetAmount:  issuance.AssetAmount,
+			TokenAmount:  issuance.TokenAmount,
+			IsReissuance: issuance.IsReissuance,
+			AssetBlinds:  issuance.AssetBlinds,
+			TokenBlinds:  issuance.TokenBlinds,
+		})
+	}
+	return result, nil
+}
+
 func (p *BitcoinClient) LockUnspent(ctx context.Context, unlock bool, transactions ...common.TransactionInfo) error {
 	log := logger.Logger(ctx).WithField("Method", "bitcoin.LockUnspent")
 

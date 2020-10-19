@@ -9,6 +9,7 @@ type PubKey string
 type BlindingKey string
 type Transaction string
 type TransactionID string
+type AssetID string
 
 type TransactionInfo struct {
 	// Bitcoin
@@ -210,4 +211,18 @@ type MempoolAccept struct {
 	TxID    string `json:"txid"`
 	Allowed bool   `json:"allowed"`
 	Reason  string `json:"reject-reason"`
+}
+
+type ListIssuancesInfo struct {
+	TxID         string  `json:"txid"`
+	Entropy      string  `json:"entropy"`
+	Asset        string  `json:"asset"`
+	AssetLabel   string  `json:"assetlabel"`
+	Token        string  `json:"token"`
+	Vin          int     `json:"vin"`
+	AssetAmount  float64 `json:"assetamount"`
+	TokenAmount  float64 `json:"tokenamount"`
+	IsReissuance bool    `json:"isreissuance"`
+	AssetBlinds  string  `json:"assetblinds"`
+	TokenBlinds  string  `json:"tokenblinds"`
 }
