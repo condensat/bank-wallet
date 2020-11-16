@@ -27,6 +27,8 @@ type ChainHandler interface {
 	GetAddressInfo(ctx context.Context, chain, address string) (common.AddressInfo, error)
 
 	WalletInfo(ctx context.Context, chain string) (common.WalletInfo, error)
+
+	IssueNewAsset(ctx context.Context, changeAddress string, spendInfos common.SpendInfo, request common.IssuanceRequest) (common.IssuanceResponse, error)
 }
 
 func ChainHandlerContext(ctx context.Context, chain ChainHandler) context.Context {
