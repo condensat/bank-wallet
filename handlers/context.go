@@ -30,6 +30,7 @@ type ChainHandler interface {
 
 	ListIssuances(ctx context.Context, request common.ListIssuancesRequest) ([]common.IssuanceInfo, error)
 	IssueNewAsset(ctx context.Context, changeAddress string, spendInfos common.SpendInfo, request common.IssuanceRequest) (common.IssuanceResponse, error)
+	ReissueAsset(ctx context.Context, changeAddress string, request common.ReissuanceRequest) (common.ReissuanceResponse, error)
 }
 
 func ChainHandlerContext(ctx context.Context, chain ChainHandler) context.Context {

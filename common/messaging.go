@@ -16,4 +16,5 @@ const (
 
 	AssetListIssuancesSubject = chanPrefix + "Asset.ListIssuances"
 	AssetIssuanceSubject      = chanPrefix + "Asset.Issuance"
+	AssetReissuanceSubject    = chanPrefix + "Asset.Reissuance"
 )

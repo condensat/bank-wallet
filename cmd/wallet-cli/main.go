@@ -153,6 +153,39 @@ func AssetIssuance(ctx context.Context, chain string, issuanceMode string, asset
 
 }
 
+func AssetReissuance(ctx context.Context, chain string, assetID string, assetAmount float64) error {
+	log := logger.Logger(ctx).WithField("Method", "AssetReissuance")
+
+	var answer common.ReissuanceResponse
+
+	if len(assetID) != 64 {
+		return errors.New("Wrong asset ID, must be 64B hexstring")
+	}
+
+	if assetAmount <= 0.0 {
+		return errors.New("Can't reissue null or negative asset amount")
+	}
+
+	assetAddress, err := client.CryptoAddressNewDeposit(ctx, chain, IssuerID)
+	if err != nil {
+		return err
+	}
+
+	answer, err = client.AssetReissuance(ctx, chain, IssuerID, assetID, assetAddress.PublicAddress, assetAmount)
+	if err != nil {
+		return err
+	}
+
+	log.WithFields(logrus.Fields{
+		"Chain":     answer.Chain,
+		"Issuer ID": answer.IssuerID,
+		"TxID":      answer.TxID,
+		"AssetVout": answer.AssetVout,
+		"TokenVout": answer.TokenVout,
+	})
+	return nil
+}
+
 func main() {
 	var command string
 	var chain string
@@ -185,6 +218,8 @@ func main() {
 		err = ListIssuances(ctx, chain, assetID)
 	case "issueAsset":
 		err = AssetIssuance(ctx, chain, issuanceMode, assetAmount, tokenAmount, contractHash)
+	case "reissueAsset":
+		err = AssetReissuance(ctx, chain, assetID, assetAmount)
 	default:
 		log.Fatalf("Unknown command %s", command)
 	}
