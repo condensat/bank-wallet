@@ -33,6 +33,12 @@ type ChainClient interface {
 	BurnAsset(ctx context.Context, destAddress, changeAddress string, request BurnRequest, addressInfo GetAddressInfo, blindTransaction bool) (BurnResponse, error)
 }
 
+// LightningClient interface specification for lightning node
+type LightningClient interface {
+	GetInfo(ctx context.Context) (GetInfoResponse, error)
+	KeySend(ctx context.Context, pubKey string, amount int, label string) (KeySendResponse, error)
+}
+
 // SsmClient interface specification for crypto-ssm
 type SsmClient interface {
 	NewAddress(ctx context.Context, ssmPath commands.SsmPath) (SsmAddress, error)

@@ -367,3 +367,77 @@ func (p *IssuanceRequest) IsValid() bool {
 		return false
 	}
 }
+
+// Lightning
+
+type ResponseError struct {
+	Code     int    `json:"code,omitempty"`
+	FullType string `json:"fullType,omitempty"`
+	Message  string `json:"message,omitempty"`
+	Name     string `json:"name,omitempty"`
+	Type     string `json:"type,omitempty"`
+	Attempts []struct {
+		Status       string `json:"status,omitempty"`
+		Failreason   string `json:"failreason,omitempty"`
+		Partid       int    `json:"partid,omitempty"`
+		Amount       string `json:"amount,omitempty"`
+		ParentPartid int    `json:"parent_partid,omitempty"`
+	} `json:"attempts,omitempty"`
+}
+
+type GetInfoResponse struct {
+	ID                  string `json:"id"`
+	Alias               string `json:"alias"`
+	Color               string `json:"color"`
+	NumPeers            int    `json:"num_peers"`
+	NumPendingChannels  int    `json:"num_pending_channels"`
+	NumActiveChannels   int    `json:"num_active_channels"`
+	NumInactiveChannels int    `json:"num_inactive_channels"`
+	Address             []struct {
+		Type    string `json:"type"`
+		Address string `json:"address"`
+		Port    int    `json:"port"`
+	} `json:"address"`
+	Binding []struct {
+		Type    string `json:"type"`
+		Address string `json:"address"`
+		Port    int    `json:"port"`
+	} `json:"binding"`
+	Version               string `json:"version"`
+	Blockheight           int    `json:"blockheight"`
+	Network               string `json:"network"`
+	MsatoshiFeesCollected int    `json:"msatoshi_fees_collected"`
+	FeesCollectedMsat     string `json:"fees_collected_msat"`
+	LightningDir          string `json:"lightning-dir"`
+	APIVersion            string `json:"api_version"`
+
+	ResponseError
+	Error *ResponseError `json:"error,omitempty"`
+}
+
+type KeySendArgs struct {
+	PubKey string `json:"pubkey"`
+	Amount int    `json:"amount"`
+	Label  string `json:"label"`
+
+	MaxFeePercent float64 `json:"maxfeepercent,omitempty"`
+	RetryFor      int     `json:"retry_for,omitempty"`
+	MaxDelay      int     `json:"maxdelay,omitempty"`
+	ExemptFee     int     `json:"exemptfee,omitempty"`
+}
+
+type KeySendResponse struct {
+	AmountMsat      string  `json:"amount_msat,omitempty"`
+	AmountSentMsat  string  `json:"amount_sent_msat,omitempty"`
+	CreatedAt       float64 `json:"created_at,omitempty"`
+	Destination     string  `json:"destination,omitempty"`
+	Msatoshi        int     `json:"msatoshi,omitempty"`
+	MsatoshiSent    int     `json:"msatoshi_sent,omitempty"`
+	Parts           int     `json:"parts,omitempty"`
+	PaymentHash     string  `json:"payment_hash,omitempty"`
+	PaymentPreimage string  `json:"payment_preimage,omitempty"`
+	Status          string  `json:"status,omitempty"`
+
+	ResponseError
+	Error *ResponseError `json:"error,omitempty"`
+}
