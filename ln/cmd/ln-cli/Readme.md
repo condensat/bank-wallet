@@ -43,3 +43,11 @@ Usage of keySend:
   --pubKey string
     	KeySend pubKey
 ```
+
+### Pay flags
+
+```bash
+Usage of pay:
+  -invoice string
+    	Pay invoice
+```

@@ -78,3 +78,23 @@ func (p *LightningClient) KeySend(ctx context.Context, pubKey string, amount int
 
 	return resp, nil
 }
+
+func (p *LightningClient) Pay(ctx context.Context, invoice string) (common.PayResponse, error) {
+	p.Mutex.Lock()
+	defer p.Mutex.Unlock()
+
+	ctx = commands.WithCommand(ctx, defaultCommand(p))
+
+	resp, err := commands.Pay(ctx, invoice)
+	if err != nil {
+		return common.PayResponse{}, err
+	}
+
+	if resp.Code != 0 {
+		return common.PayResponse{
+			ResponseError: resp.ResponseError,
+		}, ErrKeySendError
+	}
+
+	return resp, nil
+}

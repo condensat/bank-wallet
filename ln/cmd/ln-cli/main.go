@@ -35,6 +35,9 @@ func Run(ctx context.Context, args Args) {
 	case KeySend:
 		err = keySend(ctx, args.KeySend)
 
+	case Pay:
+		err = pay(ctx, args.Pay)
+
 	default:
 		printUsage(1)
 	}

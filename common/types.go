@@ -441,3 +441,23 @@ type KeySendResponse struct {
 	ResponseError
 	Error *ResponseError `json:"error,omitempty"`
 }
+
+type PayArgs struct {
+	Invoice string `json:"invoice"`
+}
+
+type PayResponse struct {
+	Destination     string  `json:"destination"`
+	PaymentHash     string  `json:"payment_hash"`
+	CreatedAt       float64 `json:"created_at"`
+	Parts           int     `json:"parts"`
+	Msatoshi        int     `json:"msatoshi"`
+	AmountMsat      string  `json:"amount_msat"`
+	MsatoshiSent    int     `json:"msatoshi_sent"`
+	AmountSentMsat  string  `json:"amount_sent_msat"`
+	PaymentPreimage string  `json:"payment_preimage"`
+	Status          string  `json:"status"`
+
+	ResponseError
+	Error *ResponseError `json:"error"`
+}

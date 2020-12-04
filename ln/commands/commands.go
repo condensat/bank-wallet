@@ -15,12 +15,14 @@ import (
 const (
 	CommandGetInfo = "/v1/getinfo"
 	CommandKeySend = "/v1/pay/keysend"
+	CommandPay     = "/v1/pay"
 )
 
 var (
-	ErrInternalError = errors.New("Internal Error")
-	ErrInvalidPubKey = errors.New("Invalid PubKey")
-	ErrInvalidAmount = errors.New("Invalid Amount")
+	ErrInternalError  = errors.New("Internal Error")
+	ErrInvalidPubKey  = errors.New("Invalid PubKey")
+	ErrInvalidAmount  = errors.New("Invalid Amount")
+	ErrInvalidInvoice = errors.New("Invalid Invoice")
 )
 
 type Command struct {
