@@ -26,18 +26,6 @@ func init() {
 	_ = dotenv.Load()
 }
 
-type ChainOption struct {
-	Chain    string
-	HostName string
-	Port     int
-	User     string
-	Pass     string
-}
-
-type ChainsOptions struct {
-	Chains []ChainOption
-}
-
 func main() {
 	var command string
 	var destAddress string
@@ -64,48 +52,8 @@ func main() {
 	// add CryptoMode to context
 	ctx = common.CryptoModeContext(ctx, common.CryptoModeBitcoinCore)
 
-	// load rpc clients configurations
-	hostname := os.Getenv("ELEMENTS_REGTEST_HOSTNAME")
-	if len(hostname) == 0 {
-		hostname = "elements_regtest"
-	}
-	port, _ := strconv.Atoi(os.Getenv("ELEMENTS_REGTEST_PORT"))
-	if port == 0 {
-		port = 28432
-	}
-	user := os.Getenv("ELEMENTS_REGTEST_USER")
-	if len(user) == 0 {
-		user = "bank-wallet"
-	}
-	password := os.Getenv("ELEMENTS_REGTEST_PASSWORD")
-	if len(password) == 0 {
-		password = "password1"
-	}
-	chainOption := []ChainOption{{
-		Chain:    "liquid-regtest",
-		HostName: hostname,
-		Port:     port,
-		User:     user,
-		Pass:     password,
-	}}
-
-	chainsOptions := ChainsOptions{
-		chainOption,
-	}
-
-	// create all rpc clients
-	for _, chainOption := range chainsOptions.Chains {
-
-		ctx = common.ChainClientContext(ctx, chainOption.Chain, bitcoin.New(ctx, bitcoin.BitcoinOptions{
-			ServerOptions: common.ServerOptions{
-				Protocol: "http",
-				HostName: chainOption.HostName,
-				Port:     chainOption.Port,
-			},
-			User: chainOption.User,
-			Pass: chainOption.Pass,
-		}))
-	}
+	client := bitcoin.NewWithClient(ctx, elementsRpcClient())
+	ctx = common.ChainClientContext(ctx, "liquid-regtest", client)
 
 	var err error
 	switch command {
@@ -153,7 +101,8 @@ func main() {
 // Bitcoin Standard
 
 func RawTransactionBitcoin(ctx context.Context) error {
-	rpcClient := bitcoinRpcClient()
+	client := bitcoinRpcClient()
+	rpcClient := client.Client
 
 	destAddress := "bcrt1qjlw9gfrqk0w2ljegl7vwzrt2rk7sst8d4hm7n9"
 
@@ -232,7 +181,8 @@ func RawTransactionBitcoin(ctx context.Context) error {
 // Liquid Elements
 
 func RawTransactionElements(ctx context.Context) error {
-	rpcClient := elementsRpcClient()
+	client := elementsRpcClient()
+	rpcClient := client.Client
 
 	destAddress := "el1qqw8rsv0nxl3mvgztna2n6fyz37wnucyt9yv5qcwty0af6e3yfaj5ke0hnadd96tp03nz8tltz4yxq39yqal9jjq9ry25gjhpw"
 	changeAddress := "el1qqdhtdknl5wazd2jysqwhun7tyx8zycygvtdyz0hg9tnr96m00ateqrewrzncus3hwdfvj9t9ehf45k5y700pjsdfc44khklma"
@@ -411,7 +361,7 @@ func BurnAsset(ctx context.Context, destAddress, changeAddress, asset string, am
 
 // Helpers
 
-func bitcoinRpcClient() commands.RpcClient {
+func bitcoinRpcClient() *rpc.Client {
 	hostname := os.Getenv("BITCOIN_TESTNET_HOSTNAME")
 	if len(hostname) == 0 {
 		hostname = "bitcoin_testnet"
@@ -432,7 +382,7 @@ func bitcoinRpcClient() commands.RpcClient {
 	return createRpcClient(hostname, port, user, password)
 }
 
-func elementsRpcClient() commands.RpcClient {
+func elementsRpcClient() *rpc.Client {
 	hostname := os.Getenv("ELEMENTS_REGTEST_HOSTNAME")
 	if len(hostname) == 0 {
 		hostname = "elements_regtest"
@@ -453,14 +403,14 @@ func elementsRpcClient() commands.RpcClient {
 	return createRpcClient(hostname, port, user, password)
 }
 
-func createRpcClient(hostname string, port int, user, password string) commands.RpcClient {
+func createRpcClient(hostname string, port int, user, password string) *rpc.Client {
 	rpcClient := rpc.New(rpc.Options{
 		ServerOptions: common.ServerOptions{Protocol: "http", HostName: hostname, Port: port},
 		User:          user,
 		Password:      password,
-	}).Client
+	})
 
-	_, err := commands.GetBlockCount(context.Background(), rpcClient)
+	_, err := commands.GetBlockCount(context.Background(), rpcClient.Client)
 	if err != nil {
 		log.Fatalf("Rpc call failed. %s.", err)
 	}

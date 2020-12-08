@@ -48,6 +48,10 @@ func New(ctx context.Context, options BitcoinOptions) *BitcoinClient {
 		Password:      options.Pass,
 	})
 
+	return NewWithClient(ctx, client)
+}
+
+func NewWithClient(ctx context.Context, client *rpc.Client) *BitcoinClient {
 	return &BitcoinClient{
 		client: client,
 	}
