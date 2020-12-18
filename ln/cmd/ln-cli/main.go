@@ -38,6 +38,9 @@ func Run(ctx context.Context, args Args) {
 	case Pay:
 		err = pay(ctx, args.Pay)
 
+	case DecodePay:
+		err = deocdepay(ctx, args.DecodePay)
+
 	default:
 		printUsage(1)
 	}

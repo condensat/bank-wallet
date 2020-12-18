@@ -38,6 +38,7 @@ type LightningClient interface {
 	GetInfo(ctx context.Context) (GetInfoResponse, error)
 	KeySend(ctx context.Context, pubKey string, amount int, label string) (KeySendResponse, error)
 	Pay(ctx context.Context, invoice string) (PayResponse, error)
+	DecodePay(ctx context.Context, invoice string) (DecodePayResponse, error)
 }
 
 // SsmClient interface specification for crypto-ssm

@@ -13,9 +13,10 @@ import (
 )
 
 const (
-	CommandGetInfo = "/v1/getinfo"
-	CommandKeySend = "/v1/pay/keysend"
-	CommandPay     = "/v1/pay"
+	CommandGetInfo   = "/v1/getinfo"
+	CommandKeySend   = "/v1/pay/keysend"
+	CommandPay       = "/v1/pay"
+	CommandDecodePay = "/v1/pay/decodePay"
 )
 
 var (

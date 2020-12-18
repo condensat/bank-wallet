@@ -98,3 +98,23 @@ func (p *LightningClient) Pay(ctx context.Context, invoice string) (common.PayRe
 
 	return resp, nil
 }
+
+func (p *LightningClient) DecodePay(ctx context.Context, invoice string) (common.DecodePayResponse, error) {
+	p.Mutex.Lock()
+	defer p.Mutex.Unlock()
+
+	ctx = commands.WithCommand(ctx, defaultCommand(p))
+
+	resp, err := commands.DecodePay(ctx, invoice)
+	if err != nil {
+		return common.DecodePayResponse{}, err
+	}
+
+	if resp.Code != 0 {
+		return common.DecodePayResponse{
+			ResponseError: resp.ResponseError,
+		}, ErrKeySendError
+	}
+
+	return resp, nil
+}

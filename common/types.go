@@ -461,3 +461,21 @@ type PayResponse struct {
 	ResponseError
 	Error *ResponseError `json:"error"`
 }
+
+type DecodePayResponse struct {
+	Currency           string `json:"currency"`
+	CreatedAt          int    `json:"created_at"`
+	Expiry             int    `json:"expiry"`
+	Payee              string `json:"payee"`
+	Msatoshi           int    `json:"msatoshi"`
+	AmountMsat         string `json:"amount_msat"`
+	Description        string `json:"description"`
+	MinFinalCltvExpiry int    `json:"min_final_cltv_expiry"`
+	PaymentSecret      string `json:"payment_secret"`
+	Features           string `json:"features"`
+	PaymentHash        string `json:"payment_hash"`
+	Signature          string `json:"signature"`
+
+	ResponseError
+	Error *ResponseError `json:"error"`
+}

@@ -51,3 +51,11 @@ Usage of pay:
   -invoice string
     	Pay invoice
 ```
+
+### DecodePay flags
+
+```bash
+Usage of decodepay:
+  -invoice string
+    	Invoice to decode (Bolt	11)
+```

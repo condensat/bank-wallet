@@ -18,7 +18,7 @@ func init() {
 }
 
 func printUsage(code int) {
-	fmt.Println("Use command [getInfo, keySend, pay]")
+	fmt.Println("Use command [getInfo, keySend, pay, decodePay]")
 	os.Exit(code)
 }
 
@@ -34,9 +34,10 @@ type Args struct {
 	Command Command
 	Common  CommonArg
 
-	GetInfo GetInfoArg
-	KeySend KeySendArg
-	Pay     PayArg
+	GetInfo   GetInfoArg
+	KeySend   KeySendArg
+	Pay       PayArg
+	DecodePay DecodePayArg
 }
 
 func commonArgs(cmd *flag.FlagSet, args *CommonArg) {
@@ -61,6 +62,8 @@ func parseArgs(ctx context.Context) Args {
 		cmd = keySendArgs(&args.KeySend)
 	case Pay:
 		cmd = payArgs(&args.Pay)
+	case DecodePay:
+		cmd = decodePayArgs(&args.DecodePay)
 
 	default:
 		printUsage(2)
