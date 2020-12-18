@@ -565,6 +565,143 @@ func SpendFunds(ctx context.Context, chain string, changeAddress string, spendIn
 	return tx, nil
 }
 
+func ListIssuances(ctx context.Context, request common.ListIssuancesRequest) ([]common.IssuanceInfo, error) {
+	log := logger.Logger(ctx).WithField("Method", "wallet.ListIssuances")
+
+	log = log.WithField("Chain", request.Chain)
+
+	client := common.ChainClientFromContext(ctx, request.Chain)
+	if client == nil {
+		return nil, ErrChainClientNotFound
+	}
+
+	list, err := client.ListIssuances(ctx, request.Asset)
+	if err != nil {
+		log.WithError(err).
+			Error("Failed to list past issuances")
+		return nil, err
+	}
+	return list, nil
+}
+
+func IssueNewAsset(ctx context.Context, changeAddress string, spendInfos common.SpendInfo, request common.IssuanceRequest) (common.IssuanceResponse, error) {
+	log := logger.Logger(ctx).WithField("Method", "wallet.IssueNewAsset")
+
+	log = log.WithField("Chain", request.Chain)
+
+	client := common.ChainClientFromContext(ctx, request.Chain)
+	if client == nil {
+		return common.IssuanceResponse{}, ErrChainClientNotFound
+	}
+
+	// Create, Fund, Sign & Broadcast transaction
+	// TODO: sanitycheck on network
+	// TODO: get blindtransaction from request arguments
+	blindTransaction := blindTransactionFromChain(request.Chain)
+
+	newAsset, err := client.IssueNewAsset(ctx, changeAddress, spendInfos, request, getAddressInfoFromDatabase, blindTransaction)
+	if err != nil {
+		log.WithError(err).
+			Error("Failed to issue new asset")
+		return common.IssuanceResponse{}, err
+	}
+
+	return newAsset, nil
+}
+
+func ReissueAsset(ctx context.Context, changeAddress string, request common.ReissuanceRequest) (common.ReissuanceResponse, error) {
+	log := logger.Logger(ctx).WithField("Method", "wallet.ReissueAsset")
+
+	log = log.WithField("Chain", request.Chain)
+
+	client := common.ChainClientFromContext(ctx, request.Chain)
+	if client == nil {
+		return common.ReissuanceResponse{}, ErrChainClientNotFound
+	}
+
+	ListUnspentMaxCount := 1
+	ListUnspentMinConf := 0
+	ListUnspentMaxConf := 9999
+
+	var input common.UTXOInfo
+
+	issuanceInfo, err := client.ListIssuances(ctx, request.AssetID)
+	if err != nil {
+		log.WithError(err).
+			Error("failed ListIssuances")
+		return common.ReissuanceResponse{}, err
+	}
+
+	if len(issuanceInfo) == 0 {
+		log.Error("no issuance listed")
+		return common.ReissuanceResponse{}, errors.New("Reissuance failed")
+	}
+
+	i := 0
+	for i < len(issuanceInfo) && issuanceInfo[i].IsReissuance == true {
+		i++
+	}
+	request.Entropy = issuanceInfo[i].Entropy
+	request.TokenID = issuanceInfo[i].Token
+
+	unspentInfo, err := client.ListUnspentWithAssetWithMaxCount(
+		ctx,
+		ListUnspentMinConf,
+		ListUnspentMaxConf,
+		request.TokenID,
+		ListUnspentMaxCount)
+	if err != nil {
+		log.WithError(err).
+			Error("failed ListUnspentWithAssetWithMaxCount")
+		return common.ReissuanceResponse{}, err
+	}
+
+	if len(unspentInfo) == 0 {
+		log.Errorf("no reissuance token to spend")
+		return common.ReissuanceResponse{}, errors.New("Reissuance failed")
+	}
+
+	input.TxID = unspentInfo[0].TxID
+	input.Vout = int(unspentInfo[0].Vout)
+	input.Asset = issuanceInfo[i].Token
+	input.Amount = unspentInfo[0].Amount // there's no point not spending the whole UTXO here
+	request.TokenAmount = unspentInfo[0].Amount
+
+	request.AssetBlinder = unspentInfo[0].Blinding.AssetBlinder
+
+	blindTransaction := blindTransactionFromChain(request.Chain)
+
+	reissuance, err := client.ReissueAsset(ctx, changeAddress, input, request, getAddressInfoFromDatabase, blindTransaction)
+	if err != nil {
+		log.WithError(err).
+			Error("Failed to reissue asset")
+		return common.ReissuanceResponse{}, err
+	}
+
+	return reissuance, nil
+}
+
+func BurnAsset(ctx context.Context, destAddress, changeAddress string, request common.BurnRequest) (common.BurnResponse, error) {
+	log := logger.Logger(ctx).WithField("Method", "wallet.BurnAsset")
+
+	log = log.WithField("Chain", request.Chain)
+
+	client := common.ChainClientFromContext(ctx, request.Chain)
+	if client == nil {
+		return common.BurnResponse{}, ErrChainClientNotFound
+	}
+
+	blindTransaction := blindTransactionFromChain(request.Chain)
+	burn, err := client.BurnAsset(ctx, destAddress, changeAddress, request, getAddressInfoFromDatabase, blindTransaction)
+	if err != nil {
+		log.WithError(err).
+			Error("Failed to burn asset")
+		return common.BurnResponse{}, err
+	}
+
+	return burn, nil
+}
+
 func getAddressInfoFromDatabase(ctx context.Context, address string, isUnconfidential bool) (commands.SsmPath, error) {
 	log := logger.Logger(ctx).WithField("Method", "wallet.chain.getAddressInfoFromDatabase")
 	db := appcontext.Database(ctx)
@@ -608,6 +745,8 @@ func getAddressInfoFromDatabase(ctx context.Context, address string, isUnconfide
 func blindTransactionFromChain(chain string) bool {
 	switch chain {
 	case "liquid-mainnet":
+		return true
+	case "liquid-regtest":
 		return true
 
 	default:

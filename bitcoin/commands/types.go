@@ -9,6 +9,7 @@ type PubKey string
 type BlindingKey string
 type Transaction string
 type TransactionID string
+type AssetID string
 
 type TransactionInfo struct {
 	// Bitcoin
@@ -178,13 +179,62 @@ type FundRawTransactionOptions struct {
 	SubtractFeeFromOutputs []int  `json:"subtractFeeFromOutputs,omitempty"`
 }
 
+type RawIssueAssetOptions struct {
+	AssetAmount  float64 `json:"asset_amount"`
+	AssetAddress string  `json:"asset_address"`
+	TokenAmount  float64 `json:"token_amount,omitempty"`
+	TokenAddress string  `json:"token_address,omitempty"`
+	Blind        bool    `json:"blind"`
+	ContractHash string  `json:"contract_hash,omitempty"`
+}
+
+type RawReissueAssetOptions struct {
+	AssetAmount  float64 `json:"asset_amount"`
+	AssetAddress string  `json:"asset_address"`
+	Entropy      string  `json:"entropy"`
+	AssetBlinder string  `json:"asset_blinder"`
+	InputIndex   int     `json:"input_index"`
+}
+
 type FundedTransaction struct {
 	Changepos int     `json:"changepos"`
 	Fee       float64 `json:"fee"`
 	Hex       string  `json:"hex"`
 }
 
+type IssuedTransaction struct {
+	Hex     string `json:"hex"`
+	Vout    int    `json:"vout"`
+	Entropy string `json:"entropy"`
+	Asset   string `json:"asset"`
+	Token   string `json:"token"`
+}
+
+type ReissuedTransaction struct {
+	Hex Transaction `json:"hex"`
+}
+
 type SignedTransaction struct {
 	Complete bool   `json:"complete"`
 	Hex      string `json:"hex"`
+}
+
+type MempoolAccept struct {
+	TxID    string `json:"txid"`
+	Allowed bool   `json:"allowed"`
+	Reason  string `json:"reject-reason"`
+}
+
+type ListIssuancesInfo struct {
+	TxID         string  `json:"txid"`
+	Entropy      string  `json:"entropy"`
+	Asset        string  `json:"asset"`
+	AssetLabel   string  `json:"assetlabel"`
+	Token        string  `json:"token"`
+	Vin          int     `json:"vin"`
+	AssetAmount  float64 `json:"assetamount"`
+	TokenAmount  float64 `json:"tokenamount"`
+	IsReissuance bool    `json:"isreissuance"`
+	AssetBlinds  string  `json:"assetblinds"`
+	TokenBlinds  string  `json:"tokenblinds"`
 }

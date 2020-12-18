@@ -28,4 +28,9 @@ const (
 	CmdSignRawTransactionWithKey    = Command("signrawtransactionwithkey")
 	CmdSignRawTransactionWithWallet = Command("signrawtransactionwithwallet")
 	CmdSendRawTransaction           = Command("sendrawtransaction")
+	CmdTestMempoolAccept            = Command("testmempoolaccept")
+
+	CmdRawIssueAsset   = Command("rawissueasset")
+	CmdListIssuances   = Command("listissuances")
+	CmdRawReissueAsset = Command("rawreissueasset")
 )

@@ -25,6 +25,21 @@ func ListUnspent(ctx context.Context, rpcClient RpcClient, filter []Address) ([]
 	return ListUnspentMinMaxAddressesAndOptions(ctx, rpcClient, AddressInfoMinConfirmation, AddressInfoMaxConfirmation, filter, ListUnspentOption{})
 }
 
+// ListUnspentWithAsset returns all the UTXO for the asset we're looking for
+func ListUnspentWithAsset(ctx context.Context, rpcClient RpcClient, filter []Address, asset string) ([]TransactionInfo, error) {
+	return ListUnspentMinMaxAddressesAndOptions(ctx, rpcClient, AddressInfoMinConfirmation, AddressInfoMaxConfirmation, filter, ListUnspentOption{
+		Asset: asset,
+	})
+}
+
+// ListUnspentWithAssetWithMaxCount returns maxCount UTXOs for the asset we're looking for
+func ListUnspentWithAssetWithMaxCount(ctx context.Context, rpcClient RpcClient, filter []Address, asset string, maxCount int) ([]TransactionInfo, error) {
+	return ListUnspentMinMaxAddressesAndOptions(ctx, rpcClient, AddressInfoMinConfirmation, AddressInfoMaxConfirmation, filter, ListUnspentOption{
+		Asset:        asset,
+		MaximumCount: maxCount,
+	})
+}
+
 func ListUnspentMinMaxAddressesAndOptions(ctx context.Context, rpcClient RpcClient, minConf, maxConf int, filter []Address, option ListUnspentOption) ([]TransactionInfo, error) {
 	list := make([]TransactionInfo, 0)
 	const includeUnsafe = true

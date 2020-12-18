@@ -31,6 +31,8 @@ var (
 
 const (
 	AddressTypeBech32 = "bech32"
+
+	ListUnspentMaxCount = 0
 )
 
 type BitcoinClient struct {
@@ -46,6 +48,10 @@ func New(ctx context.Context, options BitcoinOptions) *BitcoinClient {
 		Password:      options.Pass,
 	})
 
+	return NewWithClient(ctx, client)
+}
+
+func NewWithClient(ctx context.Context, client *rpc.Client) *BitcoinClient {
 	return &BitcoinClient{
 		client: client,
 	}
@@ -107,7 +113,7 @@ func (p *BitcoinClient) ImportAddress(ctx context.Context, account, address, pub
 	if p.client == nil {
 		return ErrInternalError
 	}
-	if len(address) == 0 {
+	if len(address) == 0 { // Maybe we should make a more specific test on addresses' length
 		return ErrInvalidAddress
 	}
 	if len(pubkey) == 0 {
@@ -198,7 +204,7 @@ func (p *BitcoinClient) ListUnspent(ctx context.Context, minConf, maxConf int, a
 		minConf, maxConf = maxConf, minConf
 	}
 
-	return p.listUnspent(ctx, minConf, maxConf, filter, "")
+	return p.listUnspent(ctx, minConf, maxConf, filter, "", ListUnspentMaxCount)
 }
 
 func (p *BitcoinClient) ListUnspentByAsset(ctx context.Context, minConf, maxConf int, asset string) ([]common.TransactionInfo, error) {
@@ -208,10 +214,20 @@ func (p *BitcoinClient) ListUnspentByAsset(ctx context.Context, minConf, maxConf
 		minConf, maxConf = maxConf, minConf
 	}
 
-	return p.listUnspent(ctx, minConf, maxConf, filter, asset)
+	return p.listUnspent(ctx, minConf, maxConf, filter, asset, ListUnspentMaxCount)
 }
 
-func (p *BitcoinClient) listUnspent(ctx context.Context, minConf, maxConf int, filter []commands.Address, asset string) ([]common.TransactionInfo, error) {
+func (p *BitcoinClient) ListUnspentWithAssetWithMaxCount(ctx context.Context, minConf, maxConf int, asset string, maxCount int) ([]common.TransactionInfo, error) {
+	var filter []commands.Address
+
+	if minConf > maxConf {
+		minConf, maxConf = maxConf, minConf
+	}
+
+	return p.listUnspent(ctx, minConf, maxConf, filter, asset, maxCount)
+}
+
+func (p *BitcoinClient) listUnspent(ctx context.Context, minConf, maxConf int, filter []commands.Address, asset string, MaxCount int) ([]common.TransactionInfo, error) {
 	log := logger.Logger(ctx).WithField("Method", "bitcoin.listUnspent")
 	client := p.client
 	if p.client == nil {
@@ -222,7 +238,8 @@ func (p *BitcoinClient) listUnspent(ctx context.Context, minConf, maxConf int, f
 		client.Client,
 		minConf, maxConf, filter,
 		commands.ListUnspentOption{
-			Asset: asset,
+			Asset:        asset,
+			MaximumCount: MaxCount,
 		},
 	)
 	if err != nil {
@@ -240,6 +257,38 @@ func (p *BitcoinClient) listUnspent(ctx context.Context, minConf, maxConf int, f
 		WithField("Count", len(list)).
 		Debug("Bitcoin RPC")
 
+	return result, nil
+}
+
+func (p *BitcoinClient) ListIssuances(ctx context.Context, asset string) ([]common.IssuanceInfo, error) {
+	log := logger.Logger(ctx).WithField("Method", "bitcoin.listIssuances")
+	client := p.client
+	if p.client == nil {
+		return nil, ErrInternalError
+	}
+
+	list, err := commands.ListIssuances(ctx, client.Client, commands.AssetID(asset))
+	if err != nil {
+		log.WithError(err).
+			Error("ListIssuances failed")
+		return nil, ErrRPCError
+	}
+
+	var result []common.IssuanceInfo
+	for _, issuance := range list {
+		result = append(result, common.IssuanceInfo{
+			TxID:         issuance.TxID,
+			Entropy:      issuance.Entropy,
+			Asset:        issuance.Asset,
+			Token:        issuance.Token,
+			Vin:          issuance.Vin,
+			AssetAmount:  issuance.AssetAmount,
+			TokenAmount:  issuance.TokenAmount,
+			IsReissuance: issuance.IsReissuance,
+			AssetBlinds:  issuance.AssetBlinds,
+			TokenBlinds:  issuance.TokenBlinds,
+		})
+	}
 	return result, nil
 }
 
@@ -403,6 +452,360 @@ func (p *BitcoinClient) SpendFunds(ctx context.Context, changeAddress string, in
 	return common.SpendTx{
 		TxID: string(tx),
 	}, nil
+}
+
+// This elements only function will create, fund, sign and broadcast a transaction that issue a new asset
+func (p *BitcoinClient) IssueNewAsset(ctx context.Context, changeAddress string, outputs common.SpendInfo, request common.IssuanceRequest, addressInfo common.GetAddressInfo, blindTransaction bool) (common.IssuanceResponse, error) {
+	log := logger.Logger(ctx).WithField("Method", "bitcoin.IssueNewAsset")
+
+	cryptoMode := common.CryptoModeFromContext(ctx)
+	log = log.WithField("CryptoMode", cryptoMode)
+
+	client := p.client
+	if p.client == nil {
+		return common.IssuanceResponse{}, ErrInternalError
+	}
+
+	answer := common.IssuanceResponse{
+		Chain:    request.Chain,
+		IssuerID: request.IssuerID,
+	}
+
+	// We create 2 LBTC outputs, which might be a bit unnecessary
+	hex, err := commands.CreateRawTransaction(ctx, client.Client, nil, []commands.SpendInfo{
+		{Address: outputs.PublicAddress, Amount: outputs.Amount},
+	}, nil)
+	if err != nil {
+		log.WithError(err).
+			Error("CreateRawTransaction failed")
+		return common.IssuanceResponse{}, ErrRPCError
+	}
+
+	funded, err := commands.FundRawTransactionWithOptions(ctx,
+		client.Client,
+		hex,
+		commands.FundRawTransactionOptions{
+			ChangeAddress:   changeAddress,
+			IncludeWatching: true,
+		},
+	)
+	if err != nil {
+		log.WithError(err).
+			Error("FundRawTransaction failed")
+		return common.IssuanceResponse{}, ErrRPCError
+	}
+
+	var issued commands.IssuedTransaction
+	switch request.Mode {
+	case common.AssetIssuanceModeWithAsset:
+		assetAddress := request.AssetPublicAddress
+		assetAmount := request.AssetIssuedAmount
+		tx := commands.Transaction(funded.Hex)
+		issued, err = commands.RawIssueAssetWithAsset(ctx, client.Client, tx, assetAddress, assetAmount)
+		if err != nil {
+			return common.IssuanceResponse{}, err
+		}
+	case common.AssetIssuanceModeWithToken:
+		assetAddress := request.AssetPublicAddress
+		assetAmount := request.AssetIssuedAmount
+		tokenAddress := request.TokenPublicAddress
+		tokenAmount := request.TokenIssuedAmount
+		tx := commands.Transaction(funded.Hex)
+		issued, err = commands.RawIssueAssetWithToken(ctx, client.Client, tx, assetAddress, assetAmount, tokenAddress, tokenAmount)
+		if err != nil {
+			return common.IssuanceResponse{}, err
+		}
+	case common.AssetIssuanceModeWithContract:
+		assetAddress := request.AssetPublicAddress
+		assetAmount := request.AssetIssuedAmount
+		contractHash := request.ContractHash
+		tx := commands.Transaction(funded.Hex)
+		issued, err = commands.RawIssueAssetWithContract(ctx, client.Client, tx, assetAddress, assetAmount, contractHash)
+		if err != nil {
+			return common.IssuanceResponse{}, err
+		}
+	case common.AssetIssuanceModeWithTokenWithContract:
+		assetAddress := request.AssetPublicAddress
+		assetAmount := request.AssetIssuedAmount
+		tokenAddress := request.TokenPublicAddress
+		tokenAmount := request.TokenIssuedAmount
+		contractHash := request.ContractHash
+		tx := commands.Transaction(funded.Hex)
+		issued, err = commands.RawIssueAssetWithTokenWithContract(ctx, client.Client, tx, assetAddress, assetAmount, tokenAddress, tokenAmount, contractHash)
+		if err != nil {
+			return common.IssuanceResponse{}, err
+		}
+	}
+
+	// blind transaction if required
+	txToSign := issued.Hex
+	if blindTransaction {
+		blinded, err := commands.BlindRawTransaction(ctx, client.Client, commands.Transaction(txToSign))
+		if err != nil {
+			log.WithError(err).
+				Error("BlindRawTransaction failed")
+			return common.IssuanceResponse{}, err
+		}
+
+		txToSign = string(blinded)
+	}
+
+	// Sign transaction
+	signed, err := signRawTransactionWithCryptoMode(ctx, client.Client, cryptoMode, txToSign, addressInfo, blindTransaction)
+	if err != nil {
+		log.WithError(err).
+			WithField("TxToSign", txToSign).
+			Error("signRawTransactionWithCryptoMode failed")
+		return common.IssuanceResponse{}, err
+	}
+	if !signed.Complete {
+		log.Error("signRawTransactionWithCryptoMode not Complete")
+		return common.IssuanceResponse{}, err
+	}
+
+	// Broadcast transaction to network
+	tx, err := commands.SendRawTransaction(ctx, client.Client, commands.Transaction(signed.Hex))
+	if err != nil {
+		log.WithError(err).
+			Error("SendRawTransaction failed")
+		return common.IssuanceResponse{}, err
+	}
+
+	// Update
+	answer.AssetID = issued.Asset
+	answer.TokenID = issued.Token
+	answer.Entropy = issued.Entropy
+	answer.TxID = string(tx)
+
+	log.
+		WithFields(logrus.Fields{
+			"Asset ID":       answer.AssetID,
+			"Token ID":       answer.TokenID,
+			"Issuance Tx ID": answer.TxID,
+		}).Info("New asset issued")
+
+	// return IssuanceResponse completed with all the data about first issuance Tx
+	return answer, nil
+}
+
+func (p *BitcoinClient) ReissueAsset(ctx context.Context, changeAddress string, input common.UTXOInfo, request common.ReissuanceRequest, addressInfo common.GetAddressInfo, blindTransaction bool) (common.ReissuanceResponse, error) {
+	log := logger.Logger(ctx).WithField("Method", "bitcoin.ReissueAsset")
+
+	cryptoMode := common.CryptoModeFromContext(ctx)
+	log = log.WithField("CryptoMode", cryptoMode)
+
+	answer := common.ReissuanceResponse{
+		Chain:    request.Chain,
+		IssuerID: request.IssuerID,
+	}
+
+	client := p.client
+	if p.client == nil {
+		return common.ReissuanceResponse{}, ErrInternalError
+	}
+
+	hex, err := commands.CreateRawTransaction(ctx, client.Client, []commands.UTXOInfo{
+		{TxID: input.TxID, Vout: input.Vout}, // this is the previous token output
+	}, []commands.SpendInfo{
+		{Address: request.TokenPublicAddress, Amount: request.TokenAmount},
+	}, []commands.AssetInfo{
+		{Address: request.TokenPublicAddress, Asset: request.TokenID},
+	})
+	if err != nil {
+		log.WithError(err).
+			Error("failed CreateRawTransaction")
+		return common.ReissuanceResponse{}, err
+	}
+
+	funded, err := commands.FundRawTransactionWithOptions(ctx,
+		client.Client,
+		hex,
+		commands.FundRawTransactionOptions{
+			ChangeAddress:   changeAddress,
+			IncludeWatching: true,
+		},
+	)
+	if err != nil {
+		log.WithError(err).
+			Error("failed FundRawTransaction")
+		return common.ReissuanceResponse{}, err
+	}
+
+	reissued, err := commands.RawReissueAsset(
+		ctx,
+		client.Client,
+		commands.Transaction(funded.Hex),
+		request.AssetIssuedAmount,
+		request.AssetPublicAddress,
+		request.Entropy,
+		request.AssetBlinder,
+		0, // we put the token input at index 0 with createrawtransaction
+	)
+	if err != nil {
+		log.WithError(err).
+			Error("failed RawReissueAsset")
+		return common.ReissuanceResponse{}, err
+	}
+
+	// blind transaction if required
+	txToSign := string(reissued)
+	if blindTransaction {
+		blinded, err := commands.BlindRawTransaction(ctx, client.Client, commands.Transaction(txToSign))
+		if err != nil {
+			log.WithError(err).
+				Error("BlindRawTransaction failed")
+			return common.ReissuanceResponse{}, err
+		}
+
+		txToSign = string(blinded)
+	}
+
+	// Sign transaction
+	signed, err := signRawTransactionWithCryptoMode(ctx, client.Client, cryptoMode, txToSign, addressInfo, blindTransaction)
+	if err != nil {
+		log.WithError(err).
+			WithField("TxToSign", txToSign).
+			Error("signRawTransactionWithCryptoMode failed")
+		return common.ReissuanceResponse{}, err
+	}
+	if !signed.Complete {
+		log.Error("signRawTransactionWithCryptoMode not Complete")
+		return common.ReissuanceResponse{}, err
+	}
+
+	// Broadcast transaction to network
+	tx, err := commands.SendRawTransaction(ctx, client.Client, commands.Transaction(signed.Hex))
+	if err != nil {
+		log.WithError(err).
+			Error("SendRawTransaction failed")
+		return common.ReissuanceResponse{}, err
+	}
+
+	// Update
+	// TODO: update the object with asset and token vout
+	answer.TxID = string(tx)
+
+	log.
+		WithFields(logrus.Fields{
+			"Issuance Tx ID": answer.TxID,
+		}).Info("Asset reissued")
+
+	// return ReissuanceResponse completed with all the data about the tx
+	return answer, nil
+
+}
+
+func (p *BitcoinClient) BurnAsset(ctx context.Context, destAddress, changeAddress string, request common.BurnRequest, addressInfo common.GetAddressInfo, blindTransaction bool) (common.BurnResponse, error) {
+	log := logger.Logger(ctx).WithField("Method", "bitcoin.BurnAsset")
+
+	cryptoMode := common.CryptoModeFromContext(ctx)
+	log = log.WithField("CryptoMode", cryptoMode)
+
+	answer := common.BurnResponse{
+		Chain:    request.Chain,
+		IssuerID: request.IssuerID,
+	}
+
+	client := p.client
+	if p.client == nil {
+		return common.BurnResponse{}, ErrInternalError
+	}
+
+	unspentInfo, err := commands.ListUnspentWithAsset(ctx, client.Client, nil, request.Asset)
+	if err != nil {
+		log.WithError(err).
+			Error("ListUnspentWithAsset failed")
+		return common.BurnResponse{}, err
+	}
+
+	i := 0
+	var sumAmt float64
+	Vin := []commands.UTXOInfo{}
+	for sumAmt = 0.0; sumAmt < request.Amount || i >= len(unspentInfo); i++ {
+		sumAmt += unspentInfo[i].Amount
+		Vin = append(Vin, commands.UTXOInfo{
+			TxID: unspentInfo[i].TxID,
+			Vout: unspentInfo[i].Vout,
+		})
+	}
+
+	if sumAmt < request.Amount { // since we burn assets there should never be problem with dust output
+		log.WithError(err).
+			Error("Not enough assets to burn")
+		return common.BurnResponse{}, err
+	}
+
+	hex, err := commands.CreateRawTransaction(ctx, client.Client, Vin, []commands.SpendInfo{
+		{Address: "burn", Amount: request.Amount},
+		{Address: destAddress, Amount: (sumAmt - request.Amount)},
+	}, []commands.AssetInfo{
+		{Address: "burn", Asset: request.Asset},
+		{Address: destAddress, Asset: request.Asset},
+	})
+	if err != nil {
+		log.WithError(err).
+			Error("CreateRawTransaction failed")
+		return common.BurnResponse{}, err
+	}
+
+	funded, err := commands.FundRawTransactionWithOptions(ctx,
+		client.Client,
+		hex,
+		commands.FundRawTransactionOptions{
+			ChangeAddress:   changeAddress,
+			IncludeWatching: true,
+		},
+	)
+	if err != nil {
+		log.WithError(err).
+			Error("FundRawTransaction failed")
+		return common.BurnResponse{}, err
+	}
+
+	txToSign := funded.Hex
+	if blindTransaction {
+		blinded, err := commands.BlindRawTransaction(ctx, client.Client, commands.Transaction(txToSign))
+		if err != nil {
+			log.WithError(err).
+				Error("BlindRawTransaction failed")
+			return common.BurnResponse{}, err
+		}
+
+		txToSign = string(blinded)
+	}
+
+	// Sign transaction
+	signed, err := signRawTransactionWithCryptoMode(ctx, client.Client, cryptoMode, txToSign, addressInfo, blindTransaction)
+	if err != nil {
+		log.WithError(err).
+			WithField("TxToSign", txToSign).
+			Error("signRawTransactionWithCryptoMode failed")
+		return common.BurnResponse{}, err
+	}
+	if !signed.Complete {
+		log.Error("signRawTransactionWithCryptoMode not Complete")
+		return common.BurnResponse{}, err
+	}
+
+	// Broadcast transaction to network
+	tx, err := commands.SendRawTransaction(ctx, client.Client, commands.Transaction(signed.Hex))
+	if err != nil {
+		log.WithError(err).
+			Error("SendRawTransaction failed")
+		return common.BurnResponse{}, err
+	}
+
+	answer.TxID = string(tx)
+	answer.Vout = 0 // For the moment the burn UTXO is always 0, but maybe we should change this
+	log.
+		WithFields(logrus.Fields{
+			"Asset burnt": request.Asset,
+			"Amount burn": request.Amount,
+			"Burn Tx ID":  answer.TxID,
+			"Burn Vout":   answer.Vout,
+		}).Info("Asset burnt")
+
+	return answer, nil
 }
 
 func fundRawTransactionWithCryptoMode(ctx context.Context, client *rpc.Client, cryptoMode common.CryptoMode, changeAddress string, hex commands.Transaction) (commands.FundedTransaction, error) {
@@ -584,6 +987,9 @@ func convertTransactionInfo(tx commands.TransactionInfo) common.TransactionInfo 
 		Amount:        tx.Amount,
 		Confirmations: tx.Confirmations,
 		Spendable:     tx.Spendable,
+		Blinding: common.ElementsBlindingInfo{
+			AssetBlinder: tx.AssetBlinder,
+		},
 	}
 }
 
