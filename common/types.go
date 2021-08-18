@@ -479,3 +479,25 @@ type DecodePayResponse struct {
 	ResponseError
 	Error *ResponseError `json:"error"`
 }
+
+type InvoiceInfo struct {
+	Label              string `json:"label"`
+	Bolt11             string `json:"bolt11"`
+	PaymentHash        string `json:"payment_hash"`
+	Msatoshi           int    `json:"msatoshi"`
+	AmountMsat         string `json:"amount_msat"`
+	Status             string `json:"status"`
+	PayIndex           int    `json:"pay_index"`
+	MsatoshiReceived   int    `json:"msatoshi_received"`
+	AmountReceivedMsat string `json:"amount_received_msat"`
+	PaidAt             int    `json:"paid_at"`
+	Description        string `json:"description"`
+	ExpiresAt          int    `json:"expires_at"`
+}
+
+type ListInvoicesResponse struct {
+	Invoices []InvoiceInfo `json:"invoices"`
+
+	ResponseError
+	Error *ResponseError `json:"error"`
+}

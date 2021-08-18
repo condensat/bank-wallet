@@ -13,10 +13,11 @@ import (
 )
 
 const (
-	CommandGetInfo   = "/v1/getinfo"
-	CommandKeySend   = "/v1/pay/keysend"
-	CommandPay       = "/v1/pay"
-	CommandDecodePay = "/v1/pay/decodePay"
+	CommandGetInfo      = "/v1/getinfo"
+	CommandKeySend      = "/v1/pay/keysend"
+	CommandPay          = "/v1/pay"
+	CommandDecodePay    = "/v1/pay/decodePay"
+	CommandListInvoices = "/v1/invoice/listInvoices"
 )
 
 var (

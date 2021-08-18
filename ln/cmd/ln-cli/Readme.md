@@ -59,3 +59,11 @@ Usage of decodepay:
   -invoice string
     	Invoice to decode (Bolt	11)
 ```
+
+### ListInvoices flags
+
+```bash
+Usage of listInvoices:
+  -label string
+    	Filter Invoice by label
+```

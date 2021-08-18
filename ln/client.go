@@ -16,7 +16,8 @@ import (
 )
 
 var (
-	ErrKeySendError = errors.New("KeySend Error")
+	ErrKeySendError   = errors.New("KeySend Error")
+	ListInvoicesError = errors.New("ListInvoices Error")
 )
 
 type LightningClient struct {
@@ -114,6 +115,26 @@ func (p *LightningClient) DecodePay(ctx context.Context, invoice string) (common
 		return common.DecodePayResponse{
 			ResponseError: resp.ResponseError,
 		}, ErrKeySendError
+	}
+
+	return resp, nil
+}
+
+func (p *LightningClient) ListInvoices(ctx context.Context, label string) (common.ListInvoicesResponse, error) {
+	p.Mutex.Lock()
+	defer p.Mutex.Unlock()
+
+	ctx = commands.WithCommand(ctx, defaultCommand(p))
+
+	resp, err := commands.ListInvoices(ctx, label)
+	if err != nil {
+		return common.ListInvoicesResponse{}, err
+	}
+
+	if resp.Code != 0 {
+		return common.ListInvoicesResponse{
+			ResponseError: resp.ResponseError,
+		}, ListInvoicesError
 	}
 
 	return resp, nil

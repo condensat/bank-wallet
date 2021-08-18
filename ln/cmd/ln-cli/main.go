@@ -41,6 +41,9 @@ func Run(ctx context.Context, args Args) {
 	case DecodePay:
 		err = deocdepay(ctx, args.DecodePay)
 
+	case ListInvoices:
+		err = listInvoices(ctx, args.ListInvoices)
+
 	default:
 		printUsage(1)
 	}
