@@ -39,6 +39,7 @@ type Args struct {
 	Pay          PayArg
 	DecodePay    DecodePayArg
 	ListInvoices ListInvoicesArg
+	GenInvoice   GenInvoiceArg
 }
 
 func commonArgs(cmd *flag.FlagSet, args *CommonArg) {
@@ -67,6 +68,8 @@ func parseArgs(ctx context.Context) Args {
 		cmd = decodePayArgs(&args.DecodePay)
 	case ListInvoices:
 		cmd = listInvoicesArgs(&args.ListInvoices)
+	case GenInvoice:
+		cmd = genInvoiceArgs(&args.GenInvoice)
 
 	default:
 		printUsage(2)

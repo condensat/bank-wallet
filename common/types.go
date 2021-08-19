@@ -501,3 +501,21 @@ type ListInvoicesResponse struct {
 	ResponseError
 	Error *ResponseError `json:"error"`
 }
+
+type GenInvoiceResponse struct {
+	PaymentHash string `json:"payment_hash"`
+	ExpiresAt   int    `json:"expires_at"`
+	Bolt11      string `json:"bolt11"`
+
+	ResponseError
+	Error *ResponseError `json:"error"`
+}
+
+type GenInvoiceArgs struct {
+	Amount      int    `json:"amount"`
+	Label       string `json:"label"`
+	Description string `json:"description"`
+
+	Expiry  int  `json:"expiry,omitempty"`
+	Private bool `json:"private,omitempty"`
+}

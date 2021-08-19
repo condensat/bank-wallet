@@ -18,6 +18,7 @@ import (
 var (
 	ErrKeySendError   = errors.New("KeySend Error")
 	ListInvoicesError = errors.New("ListInvoices Error")
+	GenInvoiceError   = errors.New("GenInvoice Error")
 )
 
 type LightningClient struct {
@@ -135,6 +136,26 @@ func (p *LightningClient) ListInvoices(ctx context.Context, label string) (commo
 		return common.ListInvoicesResponse{
 			ResponseError: resp.ResponseError,
 		}, ListInvoicesError
+	}
+
+	return resp, nil
+}
+
+func (p *LightningClient) GenInvoice(ctx context.Context, amount int, label, description string, expiry int, private bool) (common.GenInvoiceResponse, error) {
+	p.Mutex.Lock()
+	defer p.Mutex.Unlock()
+
+	ctx = commands.WithCommand(ctx, defaultCommand(p))
+
+	resp, err := commands.GenInvoice(ctx, amount, label, description, expiry, private)
+	if err != nil {
+		return common.GenInvoiceResponse{}, err
+	}
+
+	if resp.Code != 0 {
+		return common.GenInvoiceResponse{
+			ResponseError: resp.ResponseError,
+		}, GenInvoiceError
 	}
 
 	return resp, nil

@@ -18,6 +18,7 @@ const (
 	CommandPay          = "/v1/pay"
 	CommandDecodePay    = "/v1/pay/decodePay"
 	CommandListInvoices = "/v1/invoice/listInvoices"
+	CommandGenInvoice   = "/v1/invoice/genInvoice"
 )
 
 var (

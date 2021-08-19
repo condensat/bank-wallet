@@ -40,6 +40,7 @@ type LightningClient interface {
 	Pay(ctx context.Context, invoice string) (PayResponse, error)
 	DecodePay(ctx context.Context, invoice string) (DecodePayResponse, error)
 	ListInvoices(ctx context.Context, label string) (ListInvoicesResponse, error)
+	GenInvoice(ctx context.Context, amount int, label, description string, expiry int, private bool) (GenInvoiceResponse, error)
 }
 
 // SsmClient interface specification for crypto-ssm

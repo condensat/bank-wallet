@@ -67,3 +67,19 @@ Usage of listInvoices:
   -label string
     	Filter Invoice by label
 ```
+
+### GenInvoices flags
+
+```bash
+Usage of genInvoice:
+  -amount int
+    	Invoice Amount (msats)
+  -description string
+    	Invoice description
+  -endpoint string
+    	Lightning node onion address
+  -expiry int
+    	Invoice expiry (seconds)
+  -label string
+    	Invoice label
+```

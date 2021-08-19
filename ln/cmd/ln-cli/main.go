@@ -44,6 +44,9 @@ func Run(ctx context.Context, args Args) {
 	case ListInvoices:
 		err = listInvoices(ctx, args.ListInvoices)
 
+	case GenInvoice:
+		err = genInvoice(ctx, args.GenInvoice)
+
 	default:
 		printUsage(1)
 	}
